@@ -1,1 +1,10 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+
+# 여기에서 lint 규칙을 정함
+custom_lint:
+  rules:
+    - missing_provider_scope: true
