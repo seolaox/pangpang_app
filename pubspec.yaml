@@ -41,6 +41,9 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/json/
+
+  
   
   fonts:
     - family: omyu-pretty
