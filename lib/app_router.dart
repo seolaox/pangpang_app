@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/ui/components/app_tabbar.dart';
 import 'package:pangpang_app/ui/screen/food_view.dart';
+import 'package:pangpang_app/ui/screen/home_detail_view.dart';
 import 'package:pangpang_app/ui/screen/home_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
 
@@ -22,6 +23,10 @@ class AppRouter {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileView(),
+      ),
+      GoRoute(
+        path: '/home_detail',
+        builder: (context, state) => const HomeDetailView(),
       ),
     ]
   );

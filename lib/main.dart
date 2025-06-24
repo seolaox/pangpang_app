@@ -26,6 +26,7 @@ class MainApp extends StatelessWidget {
             supportedLocales: const [Locale('ko', '')],
             debugShowCheckedModeBanner: false,
             routerConfig: AppRouter.router,
+            theme: ThemeData(fontFamily: 'omyu-pretty'),
           ),
     );
   }

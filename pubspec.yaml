@@ -40,3 +40,8 @@ flutter:
 
   assets:
     - assets/images/
+  
+  fonts:
+    - family: omyu-pretty
+      fonts:
+        - asset: assets/fonts/omyu-pretty.ttf

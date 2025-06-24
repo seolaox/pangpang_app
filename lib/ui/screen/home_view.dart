@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/ui/widget/home_card.dart';
 
 class HomeView extends StatelessWidget {
@@ -14,7 +15,10 @@ class HomeView extends StatelessWidget {
               child: ListView.builder(
                 itemCount: 3,
                 itemBuilder: (context, index) {
-                  return const HomeCard();
+                  return GestureDetector(
+                    onTap: () => context.push('/home_detail'),
+                    child: const HomeCard(),
+                  );
                 },
               ),
             ),

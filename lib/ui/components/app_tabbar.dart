@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/presentation/provider/tabbar_provider.dart';
+import 'package:pangpang_app/ui/components/app_appbar.dart';
 import 'package:pangpang_app/ui/screen/food_view.dart';
 import 'package:pangpang_app/ui/screen/home_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
+import 'package:pangpang_app/ui/screen/record_view.dart';
+import 'package:pangpang_app/util/style/image_to_icon.dart';
 import 'package:pangpang_app/util/theme/tabbar_theme.dart';
 
 class AppTabbar extends ConsumerStatefulWidget {
@@ -27,7 +30,7 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
     super.initState();
     // Provider의 현재 상태로 초기화
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: ref.read(tabProvider),
     );
@@ -64,35 +67,41 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
     }
 
     return Scaffold(
+      appBar: AppAppBar(),
       body: TabBarView(
         controller: _tabController,
-        children: [const HomeView(), const FoodView(), const ProfileView()],
+        children: [const HomeView(), const FoodView(), const RecordView(), const ProfileView()],
       ),
-      bottomNavigationBar: _buildTab(),
+      bottomNavigationBar: _buildTab(context),
     );
   }
 
-  Widget _buildTab() {
+  Container _buildTab(BuildContext context) {
     return Container(
       decoration: AppTabBarTheme.decoration,
       height: AppTabBarTheme.height,
       child: TabBar(
         controller: _tabController,
         labelColor: AppTabBarTheme.selectedColor,
-        // unselectedLabelColor: AppTabBarTheme.unselectedColor,
-        // indicatorWeight: AppTabBarTheme.indicatorWeight,
-        labelStyle: AppTabBarTheme.labelStyle,
         onTap: (index) {
           ref.read(tabProvider.notifier).changeTab(index);
         },
         tabs: [
+          Tab(icon: Icon(Icons.home, size: AppTabBarTheme.iconSize), text: '홈'),
           Tab(
-            icon: Icon(Icons.home_rounded, size: AppTabBarTheme.iconSize),
-            text: '홈',
+            icon: imageToIcon(
+              context,
+              'assets/images/bone.png',
+              AppTabBarTheme.iconSize,
+              ref.read(tabProvider) == 1
+                  ? Colors.blue
+                  : Colors.black,
+            ),
+            text: '식사관리',
           ),
           Tab(
-            icon: Icon(Icons.pets_rounded, size: AppTabBarTheme.iconSize),
-            text: '식사관리',
+            icon: Icon(Icons.medical_information, size: AppTabBarTheme.iconSize),
+            text: '건강기록',
           ),
           Tab(
             icon: Icon(Icons.pets, size: AppTabBarTheme.iconSize),
