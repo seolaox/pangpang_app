@@ -167,7 +167,7 @@ class MyDialog extends ConsumerWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           onPressed();
-                          // Navigator.of(context).pop(); // 다이얼로그 닫기
+                          // 여기서 데이터 저장해주기
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: buttonColor ?? Colors.blue,

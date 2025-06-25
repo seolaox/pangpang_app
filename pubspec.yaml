@@ -25,6 +25,7 @@ dependencies:
   cached_network_image: ^3.4.1
   carousel_slider: ^5.1.1
   lottie: ^3.3.1
+  flutter_quill: ^11.4.1
 
 
 

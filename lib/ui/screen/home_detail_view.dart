@@ -9,7 +9,11 @@ class HomeDetailView extends StatelessWidget {
     return Scaffold(
       appBar: AppAppBar(),
       body: Center(
-        child: Text('Home Detail'),
+        child: Column(
+          children: [
+            Text('Home Detail'),
+          ],
+        ),
       ),
     );
   }
