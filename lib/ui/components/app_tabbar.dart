@@ -70,7 +70,7 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
       appBar: AppAppBar(),
       body: TabBarView(
         controller: _tabController,
-        children: [const HomeView(), const FoodView(), const RecordView(), const ProfileView()],
+        children: [ HomeView(), const FoodView(), const RecordView(), const ProfileView()],
       ),
       bottomNavigationBar: _buildTab(context),
     );

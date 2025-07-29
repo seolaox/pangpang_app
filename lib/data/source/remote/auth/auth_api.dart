@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pangpang_app/data/model/user/login_model.dart';
 import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/util/api_endpoint.dart';
 import 'package:dio/dio.dart';
 import 'package:pangpang_app/util/token_manager.dart';
+import 'package:http_parser/http_parser.dart';
 
 class AuthApi {
   final Dio _dio = Dio();
@@ -84,7 +88,6 @@ class AuthApi {
     );
   }
 
-
   // 사용자 정보 조회 API 추가
   Future<UserModel> getCurrentUserApi() async {
     try {
@@ -106,33 +109,108 @@ class AuthApi {
       rethrow;
     }
   }
-  
-
 
   //프로필 가져오는 api
-   Future<UserModel> getProfileUserApi(String uid) async {
-      final token = await TokenManager.getAccessToken();
-      String url = '$baseUrl${ApiEndpoint.getProfile}/$uid';
-      final response = await _dio.get(
-        url,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      if (response.statusCode == 200) {
-        final user = UserModel.fromMap(response.data);
-        print('families: ${user.families}');
-        for (final fam in user.families) {
-          print('가족 이름: ${fam.family.fname}' );
-          print('리더: ${fam.family.leader_uid}');
-          print('상태: ${fam.status}');
+  Future<UserModel> getProfileUserApi(String uid) async {
+    final token = await TokenManager.getAccessToken();
+    String url = '$baseUrl${ApiEndpoint.getProfile}/$uid';
+    final response = await _dio.get(
+      url,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    if (response.statusCode == 200) {
+      final user = UserModel.fromMap(response.data);
+      print('families: ${user.families}');
+      for (final fam in user.families) {
+        print('가족 이름: ${fam.family.fname}');
+        print('리더: ${fam.family.leader_uid}');
+        print('상태: ${fam.status}');
+      }
+      print('animals: ${user.animals}');
+      for (final animal in user.animals) {
+        print('동물이름: ${animal.aname}');
+        print('소개: ${animal.aintroduction}');
+      }
+      return user;
+    } else {
+      throw Exception('사용자 플로필 가져오기 실패');
+    }
+  }
+
+  Future<void> uploadImages(List<XFile> images, String imgType) async {
+    final token = await TokenManager.getAccessToken();
+
+    for (final img in images) {
+      try {
+        final String filename = img.path.split('/').last;
+        final formData = FormData.fromMap({
+          "file": await MultipartFile.fromFile(img.path, filename: filename),
+        });
+        final response = await _dio.post(
+          '$baseUrl${ApiEndpoint.postImage}/$imgType',
+          data: formData,
+          options: Options(
+            contentType: 'multipart/form-data',
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+        // 응답 체크 및 로그
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          print('이미지 $filename 업로드 성공');
+        } else {
+          print('이미지 $filename 업로드 실패 (status: ${response.statusCode})');
         }
-        print('animals: ${user.animals}');
-        for (final animal in user.animals) {
-          print('동물이름: ${animal.aname}');
-          print('소개: ${animal.aintroduction}');
-        }
-        return user;
-      } else {
-        throw Exception('사용자 플로필 가져오기 실패');
+      } catch (e) {
+        // 업로드 실패시 에러 로그
+        print('이미지 ${img.path} 업로드 중 에러: $e');
       }
     }
   }
+
+
+
+
+
+
+//   Future<void> uploadImages(List<XFile> images, String imgtype) async {
+//     final token = await TokenManager.getAccessToken();
+//     final url = '$baseUrl${ApiEndpoint.postImage}/$imgtype';
+
+//     for (final img in images) {
+//       String ext = img.path.split('.').last.toLowerCase();
+//       final formData = FormData();
+//       formData.files.add(
+//         MapEntry(
+//           'file',
+//           await MultipartFile.fromFile(
+//             img.path,
+//             filename: img.path.split('/').last,
+//             contentType: MediaType('image', ext), // ext: 'png', 'jpeg', 'jpg' 등
+//           ),
+//         ),
+//       );
+
+//       try {
+//         final response = await _dio.post(
+//           '$baseUrl${ApiEndpoint.postImage}/$ext',
+//           data: formData,
+//           options: Options(
+//             headers: {
+//               'Authorization': 'Bearer $token',
+//               'accept': 'application/json',
+//             },
+//           ),
+//         );
+//         if (response.statusCode == 200) {
+//           print('업로드 성공: ${img.name}');
+//         } else {
+//           throw Exception('이미지 업로드 실패: ${response.statusCode}');
+//         }
+//       } catch (e) {
+//         print('이미지 업로드 중 오류: $e, 파일명: ${img.path.split("/").last}');
+//         rethrow;
+//       }
+//     }
+//   }
+// }
+}

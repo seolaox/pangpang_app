@@ -7,6 +7,7 @@ import 'package:pangpang_app/ui/screen/home_view.dart';
 import 'package:pangpang_app/ui/screen/login_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
 import 'package:pangpang_app/ui/screen/splash_view.dart';
+import 'package:pangpang_app/ui/screen/test.dart';
 import 'package:pangpang_app/ui/screen/user_view.dart';
 
 class AppRouter {
@@ -25,7 +26,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const HomeView(),
+        builder: (context, state) =>  HomeView(),
       ),
       GoRoute(
         path: '/food',
@@ -37,7 +38,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/home_detail',
-        builder: (context, state) => const HomeDetailView(),
+        builder: (context, state) =>  HomeDetailView(),
       ),
       GoRoute(
         path: '/user',

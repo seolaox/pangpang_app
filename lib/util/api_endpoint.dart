@@ -8,4 +8,5 @@ class ApiEndpoint {
   static const String getImages = "images/get/images";
   static const String getProfile = "user/get/profile";
   static const String getRefresh = "auth/refresh";
+  static const String postImage = "images/upload";
 }
