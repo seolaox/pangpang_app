@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/presentation/provider/appbar_provider.dart';
+import 'package:pangpang_app/presentation/provider/auth_provider/auth_provider.dart';
 import 'package:pangpang_app/ui/components/my_dialog.dart';
 import 'package:pangpang_app/ui/widget/my_animation.dart';
 import 'package:pangpang_app/util/style/my_text_style.dart';
@@ -14,7 +15,7 @@ class AppAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appBarState = ref.watch(appBarProvider);
     final appBarVM = ref.read(appBarProvider.notifier);
-    
+
     return AppBar(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -91,7 +92,19 @@ class AppAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: () async {
+            // final user = await ref.read(authUseCaseProvider).getCurrentUser();
+            // GoRouter.of(context).push('/user', extra: user);
+            final loginState = ref.read(loginVmProvider);
+            if (loginState.userInfoList.isNotEmpty) {
+              final currentUid = loginState.userInfoList[0].uid;
+
+              final user = await ref
+                  .read(authUseCaseProvider)
+                  .getProfileUser(uid: currentUid);
+              GoRouter.of(context).push('/user', extra: user);
+            }
+          },
           icon: Icon(Icons.person_rounded), // 로그인 여부에 따라 아이콘 변경
         ),
         IconButton(

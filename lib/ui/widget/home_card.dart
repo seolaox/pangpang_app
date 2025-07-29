@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:pangpang_app/ui/widget/image_slider/image_slider.dart';
+import 'package:pangpang_app/ui/widget/image_widget/image_slider.dart';
 import 'package:pangpang_app/util/style/my_text_style.dart';
 
 class HomeCard extends ConsumerWidget {
