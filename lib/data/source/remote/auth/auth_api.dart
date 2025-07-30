@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pangpang_app/data/model/post_model.dart';
 import 'package:pangpang_app/data/model/user/login_model.dart';
 import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/util/api_endpoint.dart';
@@ -167,50 +168,18 @@ class AuthApi {
     }
   }
 
+  Future<List<PostModel>> fetchPosts({int page = 1, int size = 10}) async {
+    final url = '$baseUrl${ApiEndpoint.postList}?page=$page&size=$size';
+    final response = await _dio.get(url);
 
-
-
-
-
-//   Future<void> uploadImages(List<XFile> images, String imgtype) async {
-//     final token = await TokenManager.getAccessToken();
-//     final url = '$baseUrl${ApiEndpoint.postImage}/$imgtype';
-
-//     for (final img in images) {
-//       String ext = img.path.split('.').last.toLowerCase();
-//       final formData = FormData();
-//       formData.files.add(
-//         MapEntry(
-//           'file',
-//           await MultipartFile.fromFile(
-//             img.path,
-//             filename: img.path.split('/').last,
-//             contentType: MediaType('image', ext), // ext: 'png', 'jpeg', 'jpg' 등
-//           ),
-//         ),
-//       );
-
-//       try {
-//         final response = await _dio.post(
-//           '$baseUrl${ApiEndpoint.postImage}/$ext',
-//           data: formData,
-//           options: Options(
-//             headers: {
-//               'Authorization': 'Bearer $token',
-//               'accept': 'application/json',
-//             },
-//           ),
-//         );
-//         if (response.statusCode == 200) {
-//           print('업로드 성공: ${img.name}');
-//         } else {
-//           throw Exception('이미지 업로드 실패: ${response.statusCode}');
-//         }
-//       } catch (e) {
-//         print('이미지 업로드 중 오류: $e, 파일명: ${img.path.split("/").last}');
-//         rethrow;
-//       }
-//     }
-//   }
-// }
+    if (response.statusCode == 200) {
+      final data = response.data;
+      print(data);
+      final postsJson = data['posts'] as List<dynamic>;
+      return postsJson.map((json) => PostModel.fromJson(json)).toList();
+    } else {
+      throw Exception('게시글을 불러오는데 실패했습니다');
+    }
+  }
+  
 }

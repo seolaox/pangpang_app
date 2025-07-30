@@ -7,7 +7,6 @@ import 'package:pangpang_app/ui/screen/home_view.dart';
 import 'package:pangpang_app/ui/screen/login_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
 import 'package:pangpang_app/ui/screen/splash_view.dart';
-import 'package:pangpang_app/ui/screen/test.dart';
 import 'package:pangpang_app/ui/screen/user_view.dart';
 
 class AppRouter {
