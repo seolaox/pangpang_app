@@ -4,11 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
 import 'package:pangpang_app/ui/screen/home_create_view.dart';
+import 'package:pangpang_app/util/get_images.dart';
 
 class HomeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     String? baseUrl = dotenv.env['baseurl'];
+    if (baseUrl != null && !baseUrl.endsWith('/')) {
+      baseUrl = '$baseUrl/';
+    }
+
     final postListAsync = ref.watch(postListProvider);
 
     return Scaffold(
@@ -37,10 +42,17 @@ class HomeView extends ConsumerWidget {
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
-              final thumbnailUrl = '$baseUrl/images/post/${post.pthumbnail}';
+              final getImages = GetImages();
+              final thumbnailUrl = getImages.getImg(
+                category: 'post',
+                fileName: post.pthumbnail,
+              );
               final pimageUrls =
                   post.pimages
-                      .map((img) => '$baseUrl/images/post/$img')
+                      .map(
+                        (img) =>
+                            getImages.getImg(category: 'post', fileName: img),
+                      )
                       .toList();
               String dateStr;
               if (post.pdate is DateTime) {
@@ -193,7 +205,6 @@ class HomeView extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 6),
-                        
                       ],
                     ),
                   ),
