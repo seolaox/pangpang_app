@@ -17,7 +17,6 @@ class HomeView extends ConsumerWidget {
     final postListAsync = ref.watch(postListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('게시글 목록')),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
@@ -57,7 +56,7 @@ class HomeView extends ConsumerWidget {
               String dateStr;
               if (post.pdate is DateTime) {
                 dateStr =
-                    "${post.pdate.year}-${post.pdate.month.toString().padLeft(2, '0')}-${post.pdate.day.toString().padLeft(2, '0')}  ${post.pdate.hour.toString().padLeft(2, '0')}:${post.pdate.minute.toString().padLeft(2, '0')}";
+                    "${post.pdate.month.toString().padLeft(2, '0')}/${post.pdate.day.toString().padLeft(2, '0')}  ${post.pdate.hour.toString().padLeft(2, '0')}:${post.pdate.minute.toString().padLeft(2, '0')}";
               } else {
                 dateStr = post.pdate.toString();
               }
@@ -102,20 +101,102 @@ class HomeView extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person,
-                              size: 18,
-                              color: const Color.fromARGB(255, 29, 29, 29),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (post.pthumbnail.isNotEmpty)
+                        ConstrainedBox(
+                          constraints:  BoxConstraints(
+                            maxHeight: 230
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              thumbnailUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
+                                      Icon(Icons.broken_image, size: 60),
                             ),
+                          ),
+                        ),
+                  
+                      if (post.pimages.isNotEmpty) ...[
+                        SizedBox(height: 4),
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children:
+                                pimageUrls
+                                    .map(
+                                      (imgUrl) => Padding(
+                                        padding: EdgeInsets.only(left: 6),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          child: Image.network(
+                                            imgUrl,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Icon(
+                                                  Icons.broken_image,
+                                                  size: 24,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ),
+                      ],
+                      Divider(),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(
+                          post.pname,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(
+                          post.pcontentsText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[800],
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6, right: 6),
+                          child: Row(
+                          children: [
+                            // Icon(
+                            //   Icons.person,
+                            //   size: 18,
+                            //   color: const Color.fromARGB(255, 29, 29, 29),
+                            // ),
                             Text(
-                              post.authorName ?? post.pauthor,
+                              'by ${post.authorName ?? post.pauthor}',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.grey[600],
@@ -130,83 +211,9 @@ class HomeView extends ConsumerWidget {
                               ),
                             ),
                           ],
+                                                ),
                         ),
-                        Divider(),
-                        // 썸네일
-                        if (post.pthumbnail.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              thumbnailUrl,
-                              height: 140,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                                      Icon(Icons.broken_image, size: 60),
-                            ),
-                          ),
-
-                        if (post.pimages.isNotEmpty) ...[
-                          SizedBox(height: 4),
-                          SizedBox(
-                            height: 40,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children:
-                                  pimageUrls
-                                      .map(
-                                        (imgUrl) => Padding(
-                                          padding: EdgeInsets.only(right: 6.0),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            child: Image.network(
-                                              imgUrl,
-                                              width: 40,
-                                              height: 40,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (
-                                                    context,
-                                                    error,
-                                                    stackTrace,
-                                                  ) => Icon(
-                                                    Icons.broken_image,
-                                                    size: 24,
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                            ),
-                          ),
-                        ],
-                        Divider(),
-                        Text(
-                          post.pname,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          post.pcontentsText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[800],
-                          ),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 6),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               );
