@@ -20,6 +20,8 @@ class HomeView extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
+          ref.read(thumbnailIndexProvider.notifier).state = 0; // 썸네일 인덱스 초기화
+          ref.read(imageListProvider.notifier).clear();
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => HomeCreateView()),
@@ -66,7 +68,12 @@ class HomeView extends ConsumerWidget {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => HomeCreateView(post: post),
+                      builder:
+                          (_) => HomeCreateView(
+                            post: post,
+                            initialImages: pimageUrls,
+                            initialThumbnail: thumbnailUrl,
+                          ),
                     ),
                   );
                   ref.invalidate(postListProvider);
@@ -106,9 +113,7 @@ class HomeView extends ConsumerWidget {
                     children: [
                       if (post.pthumbnail.isNotEmpty)
                         ConstrainedBox(
-                          constraints:  BoxConstraints(
-                            maxHeight: 230
-                          ),
+                          constraints: BoxConstraints(maxHeight: 230),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
@@ -121,7 +126,7 @@ class HomeView extends ConsumerWidget {
                             ),
                           ),
                         ),
-                  
+
                       if (post.pimages.isNotEmpty) ...[
                         SizedBox(height: 4),
                         SizedBox(
@@ -143,14 +148,11 @@ class HomeView extends ConsumerWidget {
                                             height: 40,
                                             fit: BoxFit.cover,
                                             errorBuilder:
-                                                (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) => Icon(
-                                                  Icons.broken_image,
-                                                  size: 24,
-                                                ),
+                                                (context, error, stackTrace) =>
+                                                    Icon(
+                                                      Icons.broken_image,
+                                                      size: 24,
+                                                    ),
                                           ),
                                         ),
                                       ),
@@ -186,9 +188,9 @@ class HomeView extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(height: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6, right: 6),
-                          child: Row(
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6, right: 6),
+                        child: Row(
                           children: [
                             // Icon(
                             //   Icons.person,
@@ -211,8 +213,8 @@ class HomeView extends ConsumerWidget {
                               ),
                             ),
                           ],
-                                                ),
                         ),
+                      ),
                     ],
                   ),
                 ),

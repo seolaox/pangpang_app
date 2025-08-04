@@ -10,5 +10,7 @@ class ApiEndpoint {
   static const String getRefresh = "auth/refresh";
   static const String postImage = "images/upload";
   static const String postList = "post/list";
+  static const String postCreate = "post/create";
+  static const String postUpdate = "post/update";
 
 }

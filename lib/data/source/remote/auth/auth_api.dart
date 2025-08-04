@@ -8,7 +8,6 @@ import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/util/api_endpoint.dart';
 import 'package:dio/dio.dart';
 import 'package:pangpang_app/util/token_manager.dart';
-import 'package:http_parser/http_parser.dart';
 
 class AuthApi {
   final Dio _dio = Dio();
@@ -47,6 +46,7 @@ class AuthApi {
             // 토큰 저장
             accessToken = data['access_token'] ?? '';
             refreshToken = data['refresh_token'] ?? '';
+            print('accessToken: $accessToken');
 
             // FCM 토큰 업데이트
             try {
@@ -138,33 +138,59 @@ class AuthApi {
     }
   }
 
-  Future<void> uploadImages(List<XFile> images, String imgType) async {
-    final token = await TokenManager.getAccessToken();
+  // Future<void> uploadImages(List<XFile> images, String imgType) async {
+  //   final token = await TokenManager.getAccessToken();
 
-    for (final img in images) {
-      try {
-        final String filename = img.path.split('/').last;
-        final formData = FormData.fromMap({
-          "file": await MultipartFile.fromFile(img.path, filename: filename),
-        });
-        final response = await _dio.post(
-          '$baseUrl${ApiEndpoint.postImage}/$imgType',
-          data: formData,
-          options: Options(
-            contentType: 'multipart/form-data',
-            headers: {'Authorization': 'Bearer $token'},
-          ),
-        );
-        // 응답 체크 및 로그
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          print('이미지 $filename 업로드 성공');
-        } else {
-          print('이미지 $filename 업로드 실패 (status: ${response.statusCode})');
-        }
-      } catch (e) {
-        // 업로드 실패시 에러 로그
-        print('이미지 ${img.path} 업로드 중 에러: $e');
-      }
+  //   for (final img in images) {
+  //     try {
+  //       final String filename = img.path.split('/').last;
+  //       final formData = FormData.fromMap({
+  //         "file": await MultipartFile.fromFile(img.path, filename: filename),
+  //       });
+  //       final response = await _dio.post(
+  //         '$baseUrl${ApiEndpoint.postImage}/$imgType',
+  //         data: formData,
+  //         options: Options(
+  //           contentType: 'multipart/form-data',
+  //           headers: {'Authorization': 'Bearer $token'},
+  //         ),
+  //       );
+  //       // 응답 체크 및 로그
+  //       if (response.statusCode == 200 || response.statusCode == 201) {
+  //         print('이미지 $filename 업로드 성공');
+  //       } else {
+  //         print('이미지 $filename 업로드 실패 (status: ${response.statusCode})');
+  //       }
+  //     } catch (e) {
+  //       // 업로드 실패시 에러 로그
+  //       print('이미지 ${img.path} 업로드 중 에러: $e');
+  //     }
+  //   }
+  // }
+
+    Future<String> uploadImage(File imageFile, String imgType) async {
+    final token = await TokenManager.getAccessToken();
+    final String filename = imageFile.path.split('/').last;
+    final formData = FormData.fromMap({
+      "file": await MultipartFile.fromFile(imageFile.path, filename: filename),
+    });
+
+    // 실제 서버 업로드 API 엔드포인트와 일치시켜주세요!
+    final response = await _dio.post(
+      '$baseUrl${ApiEndpoint.postImage}/$imgType',
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // 서버에서 실제로 반환하는 JSON 구조에 따라 맞춰주세요!
+      // 예를 들어 응답이 {"fileName": "post_27_aaa_1.webp"}처럼 오면:
+      return response.data['fileName'];
+    } else {
+      throw Exception('이미지 업로드 실패: 상태코드 ${response.statusCode}');
     }
   }
 
@@ -174,12 +200,64 @@ class AuthApi {
 
     if (response.statusCode == 200) {
       final data = response.data;
-      print(data);
+      // print(data);
       final postsJson = data['posts'] as List<dynamic>;
       return postsJson.map((json) => PostModel.fromJson(json)).toList();
     } else {
       throw Exception('게시글을 불러오는데 실패했습니다');
     }
   }
-  
+
+  Future createPostFormData(FormData formData) async {
+  final token = await TokenManager.getAccessToken();
+  final url = '$baseUrl${ApiEndpoint.postCreate}'; // API 엔드포인트 적절히 수정
+
+  final response = await _dio.post(
+    url,
+    data: formData,
+    options: Options(
+      contentType: 'multipart/form-data',
+      headers: {'Authorization': 'Bearer $token'},
+      validateStatus: (status) => status != null && status >= 200 && status < 300,
+    ),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception('게시글 생성 실패: ${response.statusCode}');
+  }
+  return response.data;
+}
+
+Future updatePostFormData(int postId, FormData formData) async {
+  final token = await TokenManager.getAccessToken();
+  final url = '$baseUrl${ApiEndpoint.postUpdate}/$postId'; // API 엔드포인트 적절히 수정
+
+  final response = await _dio.put(
+    url,
+    data: formData,
+    options: Options(
+      contentType: 'multipart/form-data',
+      headers: {'Authorization': 'Bearer $token'},
+      validateStatus: (status) => status != null && status >= 200 && status < 300,
+    ),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception('게시글 수정 실패: ${response.statusCode}');
+  }
+  return response.data;
+}
+
+
+  Future<void> deletePost(int postId) async {
+    final url = 'http://tae-home-chat.kro.kr:3001/api/post/delete/$postId';
+    final token = await TokenManager.getAccessToken();
+    final response = await _dio.delete(
+      url,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('글 삭제 실패');
+    }
+  }
 }
