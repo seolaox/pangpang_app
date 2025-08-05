@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
-import 'package:pangpang_app/ui/screen/home_create_view.dart';
+import 'package:pangpang_app/ui/screen/home_detail_view.dart';
 import 'package:pangpang_app/util/get_images.dart';
 
 class HomeView extends ConsumerWidget {
@@ -22,10 +23,7 @@ class HomeView extends ConsumerWidget {
         onPressed: () async {
           ref.read(thumbnailIndexProvider.notifier).state = 0; // 썸네일 인덱스 초기화
           ref.read(imageListProvider.notifier).clear();
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => HomeCreateView()),
-          );
+          GoRouter.of(context).push('/home_detail');
           ref.invalidate(postListProvider);
         },
       ),
@@ -74,7 +72,7 @@ class HomeView extends ConsumerWidget {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => HomeCreateView(
+                      builder: (_) => HomeDetailView(
                         post: post,
                         initialImages: allImageUrls, // 수정 시에는 모든 이미지 전달
                         initialThumbnail: thumbnailUrl,
