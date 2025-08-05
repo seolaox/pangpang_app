@@ -65,52 +65,63 @@ class _HomeCreateViewState extends ConsumerState<HomeCreateView> {
     final thumbnailIdx = ref.read(thumbnailIndexProvider);
 
     List<MultipartFile> multipartFiles = [];
+    MultipartFile? thumbnailFile;
+
+    // 모든 이미지에 대해 MultipartFile 생성
+    List<MultipartFile> allMultipartFiles = [];
     for (var img in images) {
       if (img is File) {
         final fileName = img.path.split(Platform.pathSeparator).last;
-        multipartFiles.add(await MultipartFile.fromFile(img.path, filename: fileName));
+        allMultipartFiles.add(
+          await MultipartFile.fromFile(img.path, filename: fileName),
+        );
       }
     }
 
-    MultipartFile? thumbnailFile;
-    if (images.isNotEmpty && images[thumbnailIdx] is File) {
-      final file = images[thumbnailIdx] as File;
-      final fileName = file.path.split(Platform.pathSeparator).last;
-      thumbnailFile = await MultipartFile.fromFile(file.path, filename: fileName);
-    } else {
-      thumbnailFile = null;
+    // 썸네일 파일 설정 (선택된 인덱스의 이미지)
+    if (images.isNotEmpty && thumbnailIdx < allMultipartFiles.length) {
+      thumbnailFile = allMultipartFiles[thumbnailIdx];
     }
 
-    print("pname: ${_titleCtrl.text} ");
-    print("pimages: ${multipartFiles} ");
-    print("pthumbnail: ${thumbnailFile} ");
-    print("pdate: ${DateTime.now().toIso8601String()} ");
-    print("pcontents: ${ _bodyCtrl.text} ");
-    print("pauthor: ${widget.post?.pauthor} ");
+    // 썸네일을 제외한 나머지 이미지들만 multipartFiles에 추가
+    for (int i = 0; i < allMultipartFiles.length; i++) {
+      if (i != thumbnailIdx) {
+        // 썸네일 인덱스가 아닌 이미지들만 추가
+        multipartFiles.add(allMultipartFiles[i]);
+      }
+    }
 
+    final data = FormData();
+    data.fields.add(MapEntry("pname", _titleCtrl.text));
+    data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
+    data.fields.add(
+      MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})),
+    );
+    data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
 
-    final data = FormData.fromMap({
-      "pname": _titleCtrl.text,
-      "pimages": multipartFiles,
-      "pthumbnail": thumbnailFile,
-      "pdate": DateTime.now().toIso8601String(),
-      "pcontents": jsonEncode({"text": _bodyCtrl.text}),
-      "pauthor": widget.post?.pauthor ?? "me",
-    });
+    // 썸네일을 제외한 나머지 이미지들만 images 필드로 전송
+    for (int i = 0; i < multipartFiles.length; i++) {
+      data.files.add(MapEntry("images", multipartFiles[i]));
+    }
 
-    print("최종 전송 데이터(FormData): $data");
+    // 썸네일 파일 추가
+    if (thumbnailFile != null) {
+      data.files.add(MapEntry("thumbnail", thumbnailFile));
+    }
 
     try {
       final api = ref.read(authApiProvider);
       if (widget.post == null) {
         await api.createPostFormData(data);
       } else {
-        await api.updatePostFormData(widget.post!.pid, data); 
+        await api.updatePostFormData(widget.post!.pid, data);
       }
       if (mounted) Navigator.pop(context, true);
       ref.invalidate(postListProvider);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
       print(e);
     }
   }
@@ -136,51 +147,54 @@ class _HomeCreateViewState extends ConsumerState<HomeCreateView> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[400]!),
                 ),
-                child: images.isEmpty
-                    ? Center(child: Text('이미지 선택'))
-                    : Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: images[thumbnailIdx] is File
-                                ? Image.file(
-                                    images[thumbnailIdx] as File,
-                                    width: double.infinity,
-                                    height: 200,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.network(
-                                    images[thumbnailIdx] as String,
-                                    width: double.infinity,
-                                    height: 200,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stack) =>
-                                        Icon(Icons.broken_image),
+                child:
+                    images.isEmpty
+                        ? Center(child: Text('이미지 선택'))
+                        : Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child:
+                                  images[thumbnailIdx] is File
+                                      ? Image.file(
+                                        images[thumbnailIdx] as File,
+                                        width: double.infinity,
+                                        height: 200,
+                                        fit: BoxFit.cover,
+                                      )
+                                      : Image.network(
+                                        images[thumbnailIdx] as String,
+                                        width: double.infinity,
+                                        height: 200,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stack) =>
+                                                Icon(Icons.broken_image),
+                                      ),
+                            ),
+                            Positioned(
+                              right: 10,
+                              top: 10,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '썸네일',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                          ),
-                          Positioned(
-                            right: 10,
-                            top: 10,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black38,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '썸네일',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
               ),
             ),
             SizedBox(height: 13),
@@ -199,9 +213,10 @@ class _HomeCreateViewState extends ConsumerState<HomeCreateView> {
                         margin: EdgeInsets.symmetric(horizontal: 4),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: idx == thumbnailIdx
-                                ? Colors.amber
-                                : Colors.transparent,
+                            color:
+                                idx == thumbnailIdx
+                                    ? Colors.amber
+                                    : Colors.transparent,
                             width: 3,
                           ),
                           borderRadius: BorderRadius.circular(8),
@@ -210,19 +225,20 @@ class _HomeCreateViewState extends ConsumerState<HomeCreateView> {
                           children: [
                             images[idx] is File
                                 ? Image.file(
-                                    images[idx] as File,
-                                    width: 55,
-                                    height: 55,
-                                    fit: BoxFit.cover,
-                                  )
+                                  images[idx] as File,
+                                  width: 55,
+                                  height: 55,
+                                  fit: BoxFit.cover,
+                                )
                                 : Image.network(
-                                    images[idx] as String,
-                                    width: 55,
-                                    height: 55,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stack) =>
-                                        Icon(Icons.broken_image, size: 28),
-                                  ),
+                                  images[idx] as String,
+                                  width: 55,
+                                  height: 55,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stack) =>
+                                          Icon(Icons.broken_image, size: 28),
+                                ),
                             Positioned(
                               right: 0,
                               top: 0,
@@ -231,14 +247,13 @@ class _HomeCreateViewState extends ConsumerState<HomeCreateView> {
                                   ref
                                       .read(imageListProvider.notifier)
                                       .removeImage(idx);
-                                  final currentImages =
-                                      ref.read(imageListProvider);
-                                  final tIdx =
-                                      ref.read(thumbnailIndexProvider);
+                                  final currentImages = ref.read(
+                                    imageListProvider,
+                                  );
+                                  final tIdx = ref.read(thumbnailIndexProvider);
                                   if (tIdx >= currentImages.length) {
                                     ref
-                                        .read(
-                                            thumbnailIndexProvider.notifier)
+                                        .read(thumbnailIndexProvider.notifier)
                                         .state = currentImages.isEmpty
                                             ? 0
                                             : currentImages.length - 1;

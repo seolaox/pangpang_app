@@ -44,17 +44,23 @@ class HomeView extends ConsumerWidget {
             itemBuilder: (context, index) {
               final post = posts[index];
               final getImages = GetImages();
+              
+              // 썸네일 URL
               final thumbnailUrl = getImages.getImg(
                 category: 'post',
                 fileName: post.pthumbnail,
               );
-              final pimageUrls =
-                  post.pimages
-                      .map(
-                        (img) =>
-                            getImages.getImg(category: 'post', fileName: img),
-                      )
-                      .toList();
+              
+              // 모든 이미지 URL들
+              final allImageUrls = post.pimages
+                  .map((img) => getImages.getImg(category: 'post', fileName: img))
+                  .toList();
+              
+              // 썸네일을 제외한 나머지 이미지들만 필터링
+              final otherImageUrls = allImageUrls
+                  .where((imgUrl) => imgUrl != thumbnailUrl)
+                  .toList();
+
               String dateStr;
               if (post.pdate is DateTime) {
                 dateStr =
@@ -68,12 +74,11 @@ class HomeView extends ConsumerWidget {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (_) => HomeCreateView(
-                            post: post,
-                            initialImages: pimageUrls,
-                            initialThumbnail: thumbnailUrl,
-                          ),
+                      builder: (_) => HomeCreateView(
+                        post: post,
+                        initialImages: allImageUrls, // 수정 시에는 모든 이미지 전달
+                        initialThumbnail: thumbnailUrl,
+                      ),
                     ),
                   );
                   ref.invalidate(postListProvider);
@@ -81,21 +86,20 @@ class HomeView extends ConsumerWidget {
                 onDoubleTap: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder:
-                        (_) => AlertDialog(
-                          title: Text('삭제 확인'),
-                          content: Text('이 글을 삭제할까요?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text('취소'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text('삭제'),
-                            ),
-                          ],
+                    builder: (_) => AlertDialog(
+                      title: Text('삭제 확인'),
+                      content: Text('이 글을 삭제할까요?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('취소'),
                         ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text('삭제'),
+                        ),
+                      ],
+                    ),
                   );
 
                   if (confirmed == true) {
@@ -111,6 +115,7 @@ class HomeView extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 썸네일 이미지 (크게 표시)
                       if (post.pthumbnail.isNotEmpty)
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: 230),
@@ -120,48 +125,46 @@ class HomeView extends ConsumerWidget {
                               thumbnailUrl,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                                      Icon(Icons.broken_image, size: 60),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.broken_image, size: 60),
                             ),
                           ),
                         ),
 
-                      if (post.pimages.isNotEmpty) ...[
+                      // 썸네일을 제외한 나머지 이미지들 (작게 표시)
+                      if (otherImageUrls.isNotEmpty) ...[
                         SizedBox(height: 4),
                         SizedBox(
                           height: 40,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
-                            children:
-                                pimageUrls
-                                    .map(
-                                      (imgUrl) => Padding(
-                                        padding: EdgeInsets.only(left: 6),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                          child: Image.network(
-                                            imgUrl,
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    Icon(
-                                                      Icons.broken_image,
-                                                      size: 24,
-                                                    ),
-                                          ),
-                                        ),
+                            children: otherImageUrls
+                                .map(
+                                  (imgUrl) => Padding(
+                                    padding: EdgeInsets.only(left: 6),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Image.network(
+                                        imgUrl,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Icon(
+                                              Icons.broken_image,
+                                              size: 24,
+                                            ),
                                       ),
-                                    )
-                                    .toList(),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ),
                       ],
+                      
                       Divider(),
+                      
                       Padding(
                         padding: const EdgeInsets.only(left: 6),
                         child: Text(
@@ -192,11 +195,6 @@ class HomeView extends ConsumerWidget {
                         padding: const EdgeInsets.only(left: 6, right: 6),
                         child: Row(
                           children: [
-                            // Icon(
-                            //   Icons.person,
-                            //   size: 18,
-                            //   color: const Color.fromARGB(255, 29, 29, 29),
-                            // ),
                             Text(
                               'by ${post.authorName ?? post.pauthor}',
                               style: TextStyle(

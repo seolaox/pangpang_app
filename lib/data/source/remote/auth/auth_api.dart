@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:pangpang_app/data/model/post_model.dart';
 import 'package:pangpang_app/data/model/user/login_model.dart';
 import 'package:pangpang_app/data/model/user/user_model.dart';
@@ -138,61 +135,7 @@ class AuthApi {
     }
   }
 
-  // Future<void> uploadImages(List<XFile> images, String imgType) async {
-  //   final token = await TokenManager.getAccessToken();
 
-  //   for (final img in images) {
-  //     try {
-  //       final String filename = img.path.split('/').last;
-  //       final formData = FormData.fromMap({
-  //         "file": await MultipartFile.fromFile(img.path, filename: filename),
-  //       });
-  //       final response = await _dio.post(
-  //         '$baseUrl${ApiEndpoint.postImage}/$imgType',
-  //         data: formData,
-  //         options: Options(
-  //           contentType: 'multipart/form-data',
-  //           headers: {'Authorization': 'Bearer $token'},
-  //         ),
-  //       );
-  //       // 응답 체크 및 로그
-  //       if (response.statusCode == 200 || response.statusCode == 201) {
-  //         print('이미지 $filename 업로드 성공');
-  //       } else {
-  //         print('이미지 $filename 업로드 실패 (status: ${response.statusCode})');
-  //       }
-  //     } catch (e) {
-  //       // 업로드 실패시 에러 로그
-  //       print('이미지 ${img.path} 업로드 중 에러: $e');
-  //     }
-  //   }
-  // }
-
-    Future<String> uploadImage(File imageFile, String imgType) async {
-    final token = await TokenManager.getAccessToken();
-    final String filename = imageFile.path.split('/').last;
-    final formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(imageFile.path, filename: filename),
-    });
-
-    // 실제 서버 업로드 API 엔드포인트와 일치시켜주세요!
-    final response = await _dio.post(
-      '$baseUrl${ApiEndpoint.postImage}/$imgType',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-        headers: {'Authorization': 'Bearer $token'},
-      ),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      // 서버에서 실제로 반환하는 JSON 구조에 따라 맞춰주세요!
-      // 예를 들어 응답이 {"fileName": "post_27_aaa_1.webp"}처럼 오면:
-      return response.data['fileName'];
-    } else {
-      throw Exception('이미지 업로드 실패: 상태코드 ${response.statusCode}');
-    }
-  }
 
   Future<List<PostModel>> fetchPosts({int page = 1, int size = 10}) async {
     final url = '$baseUrl${ApiEndpoint.postList}?page=$page&size=$size';
@@ -210,7 +153,7 @@ class AuthApi {
 
   Future createPostFormData(FormData formData) async {
   final token = await TokenManager.getAccessToken();
-  final url = '$baseUrl${ApiEndpoint.postCreate}'; // API 엔드포인트 적절히 수정
+  final url = '$baseUrl${ApiEndpoint.postCreate}'; 
 
   final response = await _dio.post(
     url,
@@ -221,7 +164,6 @@ class AuthApi {
       validateStatus: (status) => status != null && status >= 200 && status < 300,
     ),
   );
-
   if (response.statusCode != 200 && response.statusCode != 201) {
     throw Exception('게시글 생성 실패: ${response.statusCode}');
   }
@@ -230,7 +172,7 @@ class AuthApi {
 
 Future updatePostFormData(int postId, FormData formData) async {
   final token = await TokenManager.getAccessToken();
-  final url = '$baseUrl${ApiEndpoint.postUpdate}/$postId'; // API 엔드포인트 적절히 수정
+  final url = '$baseUrl${ApiEndpoint.postUpdate}/$postId'; 
 
   final response = await _dio.put(
     url,
@@ -250,7 +192,7 @@ Future updatePostFormData(int postId, FormData formData) async {
 
 
   Future<void> deletePost(int postId) async {
-    final url = 'http://tae-home-chat.kro.kr:3001/api/post/delete/$postId';
+    final url = '$baseUrl${ApiEndpoint.postDelete}/$postId';
     final token = await TokenManager.getAccessToken();
     final response = await _dio.delete(
       url,

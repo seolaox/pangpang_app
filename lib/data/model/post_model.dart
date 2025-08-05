@@ -9,7 +9,7 @@ class PostModel {
   final String? authorName;
   final String? animalName;
   final String? familyName;
-  
+
   PostModel({
     required this.pid,
     required this.pname,
@@ -22,25 +22,31 @@ class PostModel {
     this.animalName,
     this.familyName,
   });
-  
+
   factory PostModel.fromJson(Map<String, dynamic> json) {
-    // pcontents 의 text 필드를 꺼내기
     String contentsText = '';
-    if (json['pcontents'] != null && json['pcontents']['text'] != null) {
-      contentsText = json['pcontents']['text'];
+    if (json['pcontents'] != null) {
+      if (json['pcontents'] is Map<String, dynamic> &&
+          json['pcontents']['text'] != null) {
+        contentsText = json['pcontents']['text'] as String;
+      }
     }
-    
+
     return PostModel(
-      pid: json['pid'],
-      pname: json['pname'],
-      pimages: List<String>.from(json['pimages'] ?? []),
-      pthumbnail: json['pthumbnail'],
-      pdate: DateTime.parse(json['pdate']),
+      pid: json['pid'] ?? 0,
+      pname: json['pname'] ?? '',
+      pimages:
+          json['pimages'] is List ? List<String>.from(json['pimages']) : [],
+      pthumbnail: json['pthumbnail'] ?? '',
+      pdate:
+          json['pdate'] != null
+              ? DateTime.parse(json['pdate'])
+              : DateTime.now(),
       pcontentsText: contentsText,
-      pauthor: json['pauthor'],
-      authorName: json['author_name'],
-      animalName: json['animal_name'],
-      familyName: json['family_name'],
+      pauthor: json['pauthor'] ?? '',
+      authorName: json['author_name'] as String?,
+      animalName: json['animal_name'] as String?,
+      familyName: json['family_name'] as String?,
     );
   }
 }
