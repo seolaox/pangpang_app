@@ -10,7 +10,7 @@ import 'package:pangpang_app/presentation/provider/post_provider.dart';
 
 class HomeDetailView extends ConsumerStatefulWidget {
   final PostModel? post;
-  final List<dynamic>? initialImages;
+  final List<String>? initialImages;
   final String? initialThumbnail;
   HomeDetailView({this.post, this.initialImages, this.initialThumbnail});
 
@@ -31,8 +31,11 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
 
     if (widget.initialImages != null && widget.initialImages!.isNotEmpty) {
       Future.microtask(() {
-        ref.read(imageListProvider.notifier).setImages(widget.initialImages!);
-        if (widget.initialThumbnail != null) {
+        ref.read(imageListProvider.notifier).setImages(widget.initialImages!.cast<dynamic>());
+        
+        if (widget.post != null) {
+          ref.read(thumbnailIndexProvider.notifier).state = widget.post!.pthumbnailIndex;
+        } else if (widget.initialThumbnail != null) {
           final idx = widget.initialImages!.indexOf(widget.initialThumbnail!);
           ref.read(thumbnailIndexProvider.notifier).state = idx == -1 ? 0 : idx;
         }
@@ -61,53 +64,51 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final images = ref.read(imageListProvider);
-    final thumbnailIdx = ref.read(thumbnailIndexProvider);
+// 이미지 배열 준비 (순서 상관없음. 내가 보낸 배열 그 순서대로 서버가 저장)
+List<dynamic> images = ref.read(imageListProvider);
+int thumbnailIdx = ref.read(thumbnailIndexProvider);
 
-    List<MultipartFile> multipartFiles = [];
-    MultipartFile? thumbnailFile;
-
-    // 모든 이미지에 대해 MultipartFile 생성
-    List<MultipartFile> allMultipartFiles = [];
-    for (var img in images) {
-      if (img is File) {
-        final fileName = img.path.split(Platform.pathSeparator).last;
-        allMultipartFiles.add(
-          await MultipartFile.fromFile(img.path, filename: fileName),
-        );
-      }
+    if (images.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('최소 1개의 이미지를 선택해주세요')));
+      return;
     }
 
-    // 썸네일 파일 설정 (선택된 인덱스의 이미지)
-    if (images.isNotEmpty && thumbnailIdx < allMultipartFiles.length) {
-      thumbnailFile = allMultipartFiles[thumbnailIdx];
-    }
-
-    // 썸네일을 제외한 나머지 이미지들만 multipartFiles에 추가
-    for (int i = 0; i < allMultipartFiles.length; i++) {
-      if (i != thumbnailIdx) {
-        // 썸네일 인덱스가 아닌 이미지들만 추가
-        multipartFiles.add(allMultipartFiles[i]);
-      }
-    }
-
-    final data = FormData();
-    data.fields.add(MapEntry("pname", _titleCtrl.text));
-    data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
-    data.fields.add(
-      MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})),
+// 이미지("images" 필드) MultipartFile 배열 준비
+List<MultipartFile> multipartFiles = [];
+for (var img in images) {
+  if (img is File) {
+    final fileName = img.path.split(Platform.pathSeparator).last;
+    multipartFiles.add(
+      await MultipartFile.fromFile(img.path, filename: fileName),
     );
-    data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
+  }
+  // 서버에 있는 기존 이미지는 String(URL)일 수 있으니 복원 필요시 따로 처리
+}
 
-    // 썸네일을 제외한 나머지 이미지들만 images 필드로 전송
-    for (int i = 0; i < multipartFiles.length; i++) {
-      data.files.add(MapEntry("images", multipartFiles[i]));
-    }
+    print('썸네일 인덱스: $thumbnailIdx');
+    print('총 이미지 수: ${images.length}');
+    print('multipartFiles 수: ${multipartFiles.length}');
 
-    // 썸네일 파일 추가
-    if (thumbnailFile != null) {
-      data.files.add(MapEntry("thumbnail", thumbnailFile));
-    }
+final data = FormData();
+data.fields.add(MapEntry("pname", _titleCtrl.text));
+data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
+data.fields.add(MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})));
+data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
+
+// 이미지 추가
+for (final file in multipartFiles) {
+  data.files.add(MapEntry("images", file));
+}
+
+// ▼▼ 이 부분 꼭 추가 ▼▼
+data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
+
+    // // 모든 이미지를 images 필드로 전송
+    // for (int i = 0; i < multipartFiles.length; i++) {
+    //   data.files.add(MapEntry("images", multipartFiles[i]));
+    // }
 
     try {
       final api = ref.read(authApiProvider);
@@ -132,11 +133,26 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
     final thumbnailIdx = ref.watch(thumbnailIndexProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.post == null ? '게시글 작성' : '게시글 수정')),
+      appBar: AppBar(
+        title: Text(widget.post == null ? '게시글 작성' : '게시글 수정'),
+        actions: [
+          TextButton(
+            onPressed: _submit,
+            child: Text(
+              widget.post == null ? '등록' : '수정',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
+            // 메인 썸네일 표시 영역
             GestureDetector(
               onTap: _pickImages,
               child: Container(
@@ -149,7 +165,21 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                 ),
                 child:
                     images.isEmpty
-                        ? Center(child: Text('이미지 선택'))
+                        ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate,
+                              size: 50,
+                              color: Colors.grey[600],
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              '이미지 선택',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        )
                         : Stack(
                           children: [
                             ClipRRect(
@@ -169,26 +199,65 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stack) =>
-                                                Icon(Icons.broken_image),
+                                                Container(
+                                                  color: Colors.grey[300],
+                                                  child: Icon(
+                                                    Icons.broken_image,
+                                                    size: 50,
+                                                  ),
+                                                ),
                                       ),
                             ),
+                            // 썸네일 표시 라벨
                             Positioned(
                               right: 10,
                               top: 10,
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 10,
-                                  vertical: 4,
+                                  vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black38,
+                                  color: Colors.black54,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Text(
-                                  '썸네일',
-                                  style: TextStyle(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.star,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '썸네일',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // 이미지 추가 버튼
+                            Positioned(
+                              left: 10,
+                              top: 10,
+                              child: GestureDetector(
+                                onTap: _pickImages,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Icon(
+                                    Icons.add_photo_alternate,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    size: 20,
                                   ),
                                 ),
                               ),
@@ -197,87 +266,184 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                         ),
               ),
             ),
-            SizedBox(height: 13),
-            if (images.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    images.length,
-                    (idx) => GestureDetector(
-                      onTap: () {
-                        ref.read(thumbnailIndexProvider.notifier).state = idx;
-                      },
-                      child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color:
-                                idx == thumbnailIdx
-                                    ? Colors.amber
-                                    : Colors.transparent,
-                            width: 3,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
+            SizedBox(height: 16),
+
+            // 이미지 선택 및 썸네일 설정 영역
+            if (images.isNotEmpty) ...[
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.photo_library,
+                          size: 20,
+                          color: Colors.grey[600],
                         ),
-                        child: Stack(
-                          children: [
-                            images[idx] is File
-                                ? Image.file(
-                                  images[idx] as File,
-                                  width: 55,
-                                  height: 55,
-                                  fit: BoxFit.cover,
-                                )
-                                : Image.network(
-                                  images[idx] as String,
-                                  width: 55,
-                                  height: 55,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stack) =>
-                                          Icon(Icons.broken_image, size: 28),
+                        SizedBox(width: 8),
+                        Text(
+                          '이미지 목록 (탭하여 썸네일 변경)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(
+                          images.length,
+                          (idx) => GestureDetector(
+                            onTap: () {
+                              ref.read(thumbnailIndexProvider.notifier).state =
+                                  idx;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('썸네일이 변경되었습니다'),
+                                  duration: Duration(seconds: 1),
                                 ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  ref
-                                      .read(imageListProvider.notifier)
-                                      .removeImage(idx);
-                                  final currentImages = ref.read(
-                                    imageListProvider,
-                                  );
-                                  final tIdx = ref.read(thumbnailIndexProvider);
-                                  if (tIdx >= currentImages.length) {
-                                    ref
-                                        .read(thumbnailIndexProvider.notifier)
-                                        .state = currentImages.isEmpty
-                                            ? 0
-                                            : currentImages.length - 1;
-                                  }
-                                },
-                                child: CircleAvatar(
-                                  radius: 11,
-                                  backgroundColor: Colors.red,
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 15,
-                                    color: Colors.white,
+                              );
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color:
+                                      idx == thumbnailIdx
+                                          ? Colors.amber
+                                          : Colors.grey[400]!,
+                                  width: idx == thumbnailIdx ? 3 : 1,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child:
+                                        images[idx] is File
+                                            ? Image.file(
+                                              images[idx] as File,
+                                              width: 70,
+                                              height: 70,
+                                              fit: BoxFit.cover,
+                                            )
+                                            : Image.network(
+                                              images[idx] as String,
+                                              width: 70,
+                                              height: 70,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stack) =>
+                                                      Container(
+                                                        width: 70,
+                                                        height: 70,
+                                                        color: Colors.grey[300],
+                                                        child: Icon(
+                                                          Icons.broken_image,
+                                                          size: 30,
+                                                        ),
+                                                      ),
+                                            ),
                                   ),
-                                ),
+                                  // 썸네일 표시 아이콘
+                                  if (idx == thumbnailIdx)
+                                    Positioned(
+                                      bottom: 2,
+                                      right: 2,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.star,
+                                          color: Colors.white,
+                                          size: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  // 삭제 버튼
+                                  Positioned(
+                                    right: -2,
+                                    top: -2,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        final imageListNotifier = ref.read(
+                                          imageListProvider.notifier,
+                                        );
+                                        imageListNotifier.removeImage(idx);
+
+                                        final currentImages = ref.read(
+                                          imageListProvider,
+                                        );
+                                        final tIdx = ref.read(
+                                          thumbnailIndexProvider,
+                                        );
+
+                                        int newThumbIdx = tIdx;
+
+                                        if (currentImages.isEmpty) {
+                                          newThumbIdx = 0;
+                                        } else if (idx == tIdx) {
+                                          if (tIdx >= currentImages.length) {
+                                            newThumbIdx =
+                                                currentImages.length - 1;
+                                          } else {
+                                            newThumbIdx = tIdx;
+                                          }
+                                        } else if (idx < tIdx) {
+                                          newThumbIdx = tIdx - 1;
+                                        }
+
+                                        ref
+                                            .read(
+                                              thumbnailIndexProvider.notifier,
+                                            )
+                                            .state = newThumbIdx;
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            SizedBox(height: 22),
+              SizedBox(height: 20),
+            ],
+
+            // 제목 및 내용 입력 폼
             Form(
               key: _formKey,
               child: Column(
@@ -287,7 +453,10 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                     controller: _titleCtrl,
                     decoration: InputDecoration(
                       labelText: '제목',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      prefixIcon: Icon(Icons.title),
                     ),
                     validator:
                         (v) => (v == null || v.isEmpty) ? '제목을 입력하세요' : null,
@@ -297,7 +466,11 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                     controller: _bodyCtrl,
                     decoration: InputDecoration(
                       labelText: '내용',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      prefixIcon: Icon(Icons.description),
+                      alignLabelWithHint: true,
                     ),
                     minLines: 5,
                     maxLines: 8,
@@ -308,11 +481,26 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
               ),
             ),
             SizedBox(height: 24),
+
+            // 저장 버튼
             ElevatedButton(
               onPressed: _submit,
-              child: Text(widget.post == null ? '등록' : '수정'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(widget.post == null ? Icons.add : Icons.edit),
+                  SizedBox(width: 8),
+                  Text(
+                    widget.post == null ? '게시글 등록' : '게시글 수정',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
               style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 48),
+                minimumSize: Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],

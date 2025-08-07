@@ -42,22 +42,27 @@ class HomeView extends ConsumerWidget {
             itemBuilder: (context, index) {
               final post = posts[index];
               final getImages = GetImages();
-              
+
               // 썸네일 URL
               final thumbnailUrl = getImages.getImg(
                 category: 'post',
                 fileName: post.pthumbnail,
               );
-              
+
               // 모든 이미지 URL들
-              final allImageUrls = post.pimages
-                  .map((img) => getImages.getImg(category: 'post', fileName: img))
-                  .toList();
-              
+              final allImageUrls =
+                  post.pimages
+                      .map<String>(
+                        (img) =>
+                            getImages.getImg(category: 'post', fileName: img),
+                      )
+                      .toList();
+
               // 썸네일을 제외한 나머지 이미지들만 필터링
-              final otherImageUrls = allImageUrls
-                  .where((imgUrl) => imgUrl != thumbnailUrl)
-                  .toList();
+              final otherImageUrls =
+                  allImageUrls
+                      .where((imgUrl) => imgUrl != thumbnailUrl)
+                      .toList();
 
               String dateStr;
               if (post.pdate is DateTime) {
@@ -72,11 +77,12 @@ class HomeView extends ConsumerWidget {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => HomeDetailView(
-                        post: post,
-                        initialImages: allImageUrls, // 수정 시에는 모든 이미지 전달
-                        initialThumbnail: thumbnailUrl,
-                      ),
+                      builder:
+                          (_) => HomeDetailView(
+                            post: post,
+                            initialImages: allImageUrls, // 수정 시에는 모든 이미지 전달
+                            initialThumbnail: thumbnailUrl,
+                          ),
                     ),
                   );
                   ref.invalidate(postListProvider);
@@ -84,20 +90,21 @@ class HomeView extends ConsumerWidget {
                 onDoubleTap: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('삭제 확인'),
-                      content: Text('이 글을 삭제할까요?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('취소'),
+                    builder:
+                        (_) => AlertDialog(
+                          title: Text('삭제 확인'),
+                          content: Text('이 글을 삭제할까요?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('취소'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text('삭제'),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: Text('삭제'),
-                        ),
-                      ],
-                    ),
                   );
 
                   if (confirmed == true) {
@@ -123,8 +130,9 @@ class HomeView extends ConsumerWidget {
                               thumbnailUrl,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.broken_image, size: 60),
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
+                                      Icon(Icons.broken_image, size: 60),
                             ),
                           ),
                         ),
@@ -136,33 +144,37 @@ class HomeView extends ConsumerWidget {
                           height: 40,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
-                            children: otherImageUrls
-                                .map(
-                                  (imgUrl) => Padding(
-                                    padding: EdgeInsets.only(left: 6),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: Image.network(
-                                        imgUrl,
-                                        width: 40,
-                                        height: 40,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            Icon(
-                                              Icons.broken_image,
-                                              size: 24,
-                                            ),
+                            children:
+                                otherImageUrls
+                                    .map(
+                                      (imgUrl) => Padding(
+                                        padding: EdgeInsets.only(left: 6),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          child: Image.network(
+                                            imgUrl,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Icon(
+                                                      Icons.broken_image,
+                                                      size: 24,
+                                                    ),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                    )
+                                    .toList(),
                           ),
                         ),
                       ],
-                      
+
                       Divider(),
-                      
+
                       Padding(
                         padding: const EdgeInsets.only(left: 6),
                         child: Text(

@@ -137,13 +137,21 @@ class AuthApi {
 
 
 
-  Future<List<PostModel>> fetchPosts({int page = 1, int size = 10}) async {
+  Future<List<PostModel>> fetchPosts({int page = 1, int size = 10, FormData? formData}) async {
+    final token = await TokenManager.getAccessToken();
     final url = '$baseUrl${ApiEndpoint.postList}?page=$page&size=$size';
-    final response = await _dio.get(url);
+    final response = await _dio.get(
+      url,data: formData,
+    options: Options(
+      contentType: 'multipart/form-data',
+      headers: {'Authorization': 'Bearer $token'},
+      validateStatus: (status) => status != null && status >= 200 && status < 300,
+    ),
+  );
 
     if (response.statusCode == 200) {
       final data = response.data;
-      // print(data);
+      print(data);
       final postsJson = data['posts'] as List<dynamic>;
       return postsJson.map((json) => PostModel.fromJson(json)).toList();
     } else {
@@ -170,7 +178,7 @@ class AuthApi {
   return response.data;
 }
 
-Future updatePostFormData(int postId, FormData formData) async {
+Future updatePostFormData(String postId, FormData formData) async {
   final token = await TokenManager.getAccessToken();
   final url = '$baseUrl${ApiEndpoint.postUpdate}/$postId'; 
 
@@ -191,7 +199,7 @@ Future updatePostFormData(int postId, FormData formData) async {
 }
 
 
-  Future<void> deletePost(int postId) async {
+  Future<void> deletePost(String postId) async {
     final url = '$baseUrl${ApiEndpoint.postDelete}/$postId';
     final token = await TokenManager.getAccessToken();
     final response = await _dio.delete(
