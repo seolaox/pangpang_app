@@ -31,10 +31,13 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
 
     if (widget.initialImages != null && widget.initialImages!.isNotEmpty) {
       Future.microtask(() {
-        ref.read(imageListProvider.notifier).setImages(widget.initialImages!.cast<dynamic>());
-        
+        ref
+            .read(imageListProvider.notifier)
+            .setImages(widget.initialImages!.cast<dynamic>());
+
         if (widget.post != null) {
-          ref.read(thumbnailIndexProvider.notifier).state = widget.post!.pthumbnailIndex;
+          ref.read(thumbnailIndexProvider.notifier).state =
+              widget.post!.pthumbnailIndex;
         } else if (widget.initialThumbnail != null) {
           final idx = widget.initialImages!.indexOf(widget.initialThumbnail!);
           ref.read(thumbnailIndexProvider.notifier).state = idx == -1 ? 0 : idx;
@@ -53,8 +56,7 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage();
-    if (picked == null) return;
-    ref.read(imageListProvider.notifier).clear();
+    if (picked == null || picked.isEmpty) return;
     for (final xfile in picked.take(5)) {
       ref.read(imageListProvider.notifier).addImage(File(xfile.path));
     }
@@ -64,9 +66,9 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-// 이미지 배열 준비 (순서 상관없음. 내가 보낸 배열 그 순서대로 서버가 저장)
-List<dynamic> images = ref.read(imageListProvider);
-int thumbnailIdx = ref.read(thumbnailIndexProvider);
+    // 이미지 배열 준비 (순서 상관없음. 내가 보낸 배열 그 순서대로 서버가 저장)
+    List<dynamic> images = ref.read(imageListProvider);
+    int thumbnailIdx = ref.read(thumbnailIndexProvider);
 
     if (images.isEmpty) {
       ScaffoldMessenger.of(
@@ -75,35 +77,36 @@ int thumbnailIdx = ref.read(thumbnailIndexProvider);
       return;
     }
 
-// 이미지("images" 필드) MultipartFile 배열 준비
-List<MultipartFile> multipartFiles = [];
-for (var img in images) {
-  if (img is File) {
-    final fileName = img.path.split(Platform.pathSeparator).last;
-    multipartFiles.add(
-      await MultipartFile.fromFile(img.path, filename: fileName),
-    );
-  }
-  // 서버에 있는 기존 이미지는 String(URL)일 수 있으니 복원 필요시 따로 처리
-}
+    // 이미지("images" 필드) MultipartFile 배열 준비
+    List<MultipartFile> multipartFiles = [];
+    for (var img in images) {
+      if (img is File) {
+        final fileName = img.path.split(Platform.pathSeparator).last;
+        multipartFiles.add(
+          await MultipartFile.fromFile(img.path, filename: fileName),
+        );
+      }
+      // 서버에 있는 기존 이미지는 String(URL)일 수 있으니 복원 필요시 따로 처리
+    }
 
     print('썸네일 인덱스: $thumbnailIdx');
     print('총 이미지 수: ${images.length}');
     print('multipartFiles 수: ${multipartFiles.length}');
 
-final data = FormData();
-data.fields.add(MapEntry("pname", _titleCtrl.text));
-data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
-data.fields.add(MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})));
-data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
+    final data = FormData();
+    data.fields.add(MapEntry("pname", _titleCtrl.text));
+    data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
+    data.fields.add(
+      MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})),
+    );
+    data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
 
-// 이미지 추가
-for (final file in multipartFiles) {
-  data.files.add(MapEntry("images", file));
-}
+    // 이미지 추가
+    for (final file in multipartFiles) {
+      data.files.add(MapEntry("images", file));
+    }
 
-// ▼▼ 이 부분 꼭 추가 ▼▼
-data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
+    data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
 
     // // 모든 이미지를 images 필드로 전송
     // for (int i = 0; i < multipartFiles.length; i++) {
@@ -149,122 +152,131 @@ data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.only(right: 20, left: 20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 메인 썸네일 표시 영역
-            GestureDetector(
-              onTap: _pickImages,
-              child: Container(
-                width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[400]!),
+            ElevatedButton.icon(
+              onPressed: _pickImages, // 원하는 함수 연결
+              icon: Icon(Icons.add_photo_alternate), // 아이콘 지정
+              label: Text('사진추가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)), // 버튼 텍스트
+              style: ElevatedButton.styleFrom(
+                // minimumSize: Size(double.infinity, 52), 
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child:
-                    images.isEmpty
-                        ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate,
-                              size: 50,
-                              color: Colors.grey[600],
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              '이미지 선택',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
-                        )
-                        : Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child:
-                                  images[thumbnailIdx] is File
-                                      ? Image.file(
-                                        images[thumbnailIdx] as File,
-                                        width: double.infinity,
-                                        height: 200,
-                                        fit: BoxFit.cover,
-                                      )
-                                      : Image.network(
-                                        images[thumbnailIdx] as String,
-                                        width: double.infinity,
-                                        height: 200,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stack) =>
-                                                Container(
-                                                  color: Colors.grey[300],
-                                                  child: Icon(
-                                                    Icons.broken_image,
-                                                    size: 50,
-                                                  ),
-                                                ),
-                                      ),
-                            ),
-                            // 썸네일 표시 라벨
-                            Positioned(
-                              right: 10,
-                              top: 10,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '썸네일',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // 이미지 추가 버튼
-                            Positioned(
-                              left: 10,
-                              top: 10,
-                              child: GestureDetector(
-                                onTap: _pickImages,
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Icon(
-                                    Icons.add_photo_alternate,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
               ),
+            ),
+            SizedBox(height: 5,),
+            // 메인 썸네일 표시 영역
+            Container(
+              width: double.infinity,
+              height: 350,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[400]!),
+              ),
+              child:
+                  images.isEmpty
+                      ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate,
+                            size: 50,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            '이미지 선택',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      )
+                      : Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child:
+                                images[thumbnailIdx] is File
+                                    ? Image.file(
+                                      images[thumbnailIdx] as File,
+                                      width: double.infinity,
+                                      height: 350,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Image.network(
+                                      images[thumbnailIdx] as String,
+                                      width: double.infinity,
+                                      height: 350,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stack) => Container(
+                                            color: Colors.grey[300],
+                                            child: Icon(
+                                              Icons.broken_image,
+                                              size: 50,
+                                            ),
+                                          ),
+                                    ),
+                          ),
+                          // 썸네일 표시 라벨
+                          Positioned(
+                            right: 10,
+                            top: 10,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '썸네일',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // 이미지 추가 버튼
+                          // Positioned(
+                          //   left: 10,
+                          //   top: 10,
+                          //   child: GestureDetector(
+                          //     onTap: _pickImages,
+                          //     child: Container(
+                          //       padding: EdgeInsets.all(8),
+                          //       decoration: BoxDecoration(
+                          //         color: Colors.black54,
+                          //         borderRadius: BorderRadius.circular(20),
+                          //       ),
+                          //       child: Icon(
+                          //         Icons.add_photo_alternate,
+                          //         color: Colors.white,
+                          //         size: 20,
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
+                        ],
+                      ),
             ),
             SizedBox(height: 16),
 
@@ -456,7 +468,6 @@ data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      prefixIcon: Icon(Icons.title),
                     ),
                     validator:
                         (v) => (v == null || v.isEmpty) ? '제목을 입력하세요' : null,
@@ -469,7 +480,6 @@ data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      prefixIcon: Icon(Icons.description),
                       alignLabelWithHint: true,
                     ),
                     minLines: 5,
