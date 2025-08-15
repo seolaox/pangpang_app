@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/presentation/provider/appbar_provider.dart';
 import 'package:pangpang_app/presentation/provider/auth_provider/auth_provider.dart';
 import 'package:pangpang_app/ui/components/my_dialog.dart';
 import 'package:pangpang_app/ui/widget/my_animation.dart';
 import 'package:pangpang_app/util/style/my_text_style.dart';
+import 'package:pangpang_app/util/token_manager.dart';
 
 class AppAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const AppAppBar({super.key});
@@ -91,27 +93,124 @@ class AppAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () async {
-            // final user = await ref.read(authUseCaseProvider).getCurrentUser();
-            // GoRouter.of(context).push('/user', extra: user);
-            final loginState = ref.read(loginVmProvider);
-            if (loginState.userInfoList.isNotEmpty) {
-              final currentUid = loginState.userInfoList[0].uid;
+  // IconButton(
+  //   onPressed: () async {
+  //     try {
+  //       // 1. SecureStorage에서 직접 토큰 확인
+  //       final accessToken = await TokenManager.getAccessToken();
+        
+  //       if (accessToken == null || accessToken.isEmpty) {
+  //         // 로그인 만료/에러 안내
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text('로그인이 필요합니다.'))
+  //         );
+  //         context.go('/login');
+  //         return;
+  //       }
 
-              final user = await ref
-                  .read(authUseCaseProvider)
-                  .getProfileUser(uid: currentUid);
-              GoRouter.of(context).push('/user', extra: user);
-            }
-          },
-          icon: Icon(Icons.person_rounded), // 로그인 여부에 따라 아이콘 변경
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.notifications_rounded), // 알람 여부에 따라 아이콘 변경
-        ),
-      ],
+  //       // 2. Provider 상태도 동기화
+  //       ref.read(accessTokenProvider.notifier).state = accessToken;
+
+  //       // 3. 사용자 정보 조회
+  //       final loginState = ref.read(loginVmProvider);
+  //       UserModel user;
+
+  //       if (loginState.userInfoList.isNotEmpty) {
+  //         final currentUid = loginState.userInfoList[0].uid;
+  //         user = await ref
+  //             .read(authUseCaseProvider)
+  //             .getProfileUser(uid: currentUid);
+  //       } else {
+  //         // 토큰 기반으로 바로 유저 조회
+  //         user = await ref.read(authUseCaseProvider).getCurrentUser();
+  //       }
+
+  //       if (context.mounted) {
+  //         GoRouter.of(context).push('/user', extra: user);
+  //       }
+  //     } catch (e) {
+  //       debugPrint('사용자 불러오기 실패: $e');
+        
+  //       // 토큰이 유효하지 않은 경우 처리
+  //       if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+  //         await TokenManager.clearTokens();
+  //         ref.read(accessTokenProvider.notifier).state = null;
+          
+  //         if (context.mounted) {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             SnackBar(content: Text('로그인이 만료되었습니다. 다시 로그인해주세요.'))
+  //           );
+  //           context.go('/login');
+  //         }
+  //       } else {
+  //         // 기타 에러
+  //         if (context.mounted) {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             SnackBar(content: Text('사용자 정보를 불러오는데 실패했습니다.'))
+  //           );
+  //         }
+  //       }
+  //     }
+  //   },
+  //   icon: Icon(Icons.person_rounded),
+  // ),
+IconButton(
+  onPressed: () async {
+    try {
+      final accessToken = await TokenManager.getAccessToken();
+      
+      if (accessToken == null || accessToken.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인이 필요합니다.'))
+        );
+        context.go('/login');
+        return;
+      }
+
+      // 🔥 변경점: 2단계 조회로 전체 정보 가져오기
+      final authUseCase = ref.read(authUseCaseProvider);
+      
+      // 1단계: 기본 정보로 uid 얻기
+      final basicUser = await authUseCase.getCurrentUser();
+      
+      // 2단계: 전체 프로필 정보 조회
+      final fullUser = await authUseCase.getProfileUser(uid: basicUser.uid);
+
+      if (context.mounted) {
+        GoRouter.of(context).push('/user', extra: fullUser);
+      }
+      
+    } catch (e) {
+      debugPrint('사용자 불러오기 실패: $e');
+      
+      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+        await TokenManager.clearTokens();
+        ref.read(accessTokenProvider.notifier).state = null;
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('로그인이 만료되었습니다. 다시 로그인해주세요.'))
+          );
+          context.go('/login');
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('사용자 정보를 불러오는데 실패했습니다.'))
+          );
+        }
+      }
+    }
+  },
+  icon: const Icon(Icons.person_rounded),
+),
+
+
+  IconButton(
+    onPressed: () {},
+    icon: Icon(Icons.notifications_rounded),
+  ),
+],
     );
   }
 

@@ -118,17 +118,17 @@ class AuthApi {
     );
     if (response.statusCode == 200) {
       final user = UserModel.fromMap(response.data);
-      print('families: ${user.families}');
-      for (final fam in user.families) {
-        print('가족 이름: ${fam.family.fname}');
-        print('리더: ${fam.family.leader_uid}');
-        print('상태: ${fam.status}');
-      }
-      print('animals: ${user.animals}');
-      for (final animal in user.animals) {
-        print('동물이름: ${animal.aname}');
-        print('소개: ${animal.aintroduction}');
-      }
+      // print('families: ${user.families}');
+      // for (final fam in user.families) {
+      //   print('가족 이름: ${fam.family.fname}');
+      //   print('리더: ${fam.family.leader_uid}');
+      //   print('상태: ${fam.status}');
+      // }
+      // print('animals: ${user.animals}');
+      // for (final animal in user.animals) {
+      //   print('동물이름: ${animal.aname}');
+      //   print('소개: ${animal.aintroduction}');
+      // }
       return user;
     } else {
       throw Exception('사용자 플로필 가져오기 실패');
@@ -136,78 +136,4 @@ class AuthApi {
   }
 
 
-
-  Future<List<PostModel>> fetchPosts({int page = 1, int size = 10, FormData? formData}) async {
-    final token = await TokenManager.getAccessToken();
-    final url = '$baseUrl${ApiEndpoint.postList}?page=$page&size=$size';
-    final response = await _dio.get(
-      url,data: formData,
-    options: Options(
-      contentType: 'multipart/form-data',
-      headers: {'Authorization': 'Bearer $token'},
-      validateStatus: (status) => status != null && status >= 200 && status < 300,
-    ),
-  );
-
-    if (response.statusCode == 200) {
-      final data = response.data;
-      print(data);
-      final postsJson = data['posts'] as List<dynamic>;
-      return postsJson.map((json) => PostModel.fromJson(json)).toList();
-    } else {
-      throw Exception('게시글을 불러오는데 실패했습니다');
-    }
-  }
-
-  Future createPostFormData(FormData formData) async {
-  final token = await TokenManager.getAccessToken();
-  final url = '$baseUrl${ApiEndpoint.postCreate}'; 
-
-  final response = await _dio.post(
-    url,
-    data: formData,
-    options: Options(
-      contentType: 'multipart/form-data',
-      headers: {'Authorization': 'Bearer $token'},
-      validateStatus: (status) => status != null && status >= 200 && status < 300,
-    ),
-  );
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception('게시글 생성 실패: ${response.statusCode}');
-  }
-  return response.data;
-}
-
-Future updatePostFormData(String postId, FormData formData) async {
-  final token = await TokenManager.getAccessToken();
-  final url = '$baseUrl${ApiEndpoint.postUpdate}/$postId'; 
-
-  final response = await _dio.put(
-    url,
-    data: formData,
-    options: Options(
-      contentType: 'multipart/form-data',
-      headers: {'Authorization': 'Bearer $token'},
-      validateStatus: (status) => status != null && status >= 200 && status < 300,
-    ),
-  );
-
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception('게시글 수정 실패: ${response.statusCode}');
-  }
-  return response.data;
-}
-
-
-  Future<void> deletePost(String postId) async {
-    final url = '$baseUrl${ApiEndpoint.postDelete}/$postId';
-    final token = await TokenManager.getAccessToken();
-    final response = await _dio.delete(
-      url,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
-    );
-    if (response.statusCode != 200) {
-      throw Exception('글 삭제 실패');
-    }
-  }
 }

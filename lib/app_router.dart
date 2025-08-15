@@ -41,7 +41,7 @@ class AppRouter {
       ),
       GoRoute(
         path: '/user',
-        builder: (context, state) => UserView(user: state.extra as UserModel),
+        builder: (context, state) => UserView(),
       ),
     ]
   );

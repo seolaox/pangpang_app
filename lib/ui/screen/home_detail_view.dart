@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pangpang_app/data/model/post_model.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
+import 'package:pangpang_app/presentation/vm/post_vm.dart';
 
 class HomeDetailView extends ConsumerStatefulWidget {
   final PostModel? post;
@@ -114,11 +115,11 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
     // }
 
     try {
-      final api = ref.read(authApiProvider);
+      final postVm = ref.read(postVmProvider.notifier);
       if (widget.post == null) {
-        await api.createPostFormData(data);
+        await postVm.createPost(data);
       } else {
-        await api.updatePostFormData(widget.post!.pid, data);
+        await postVm.updatePost(widget.post!.pid, data);
       }
       if (mounted) Navigator.pop(context, true);
       ref.invalidate(postListProvider);
@@ -159,15 +160,18 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
             ElevatedButton.icon(
               onPressed: _pickImages, // 원하는 함수 연결
               icon: Icon(Icons.add_photo_alternate), // 아이콘 지정
-              label: Text('사진추가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)), // 버튼 텍스트
+              label: Text(
+                '사진추가',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ), // 버튼 텍스트
               style: ElevatedButton.styleFrom(
-                // minimumSize: Size(double.infinity, 52), 
+                // minimumSize: Size(double.infinity, 52),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
-            SizedBox(height: 5,),
+            SizedBox(height: 5),
             // 메인 썸네일 표시 영역
             Container(
               width: double.infinity,

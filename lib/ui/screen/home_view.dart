@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
+import 'package:pangpang_app/presentation/vm/post_vm.dart';
 import 'package:pangpang_app/ui/screen/home_detail_view.dart';
 import 'package:pangpang_app/util/get_images.dart';
 
@@ -108,8 +109,10 @@ class HomeView extends ConsumerWidget {
                   );
 
                   if (confirmed == true) {
-                    final authApi = ref.read(authApiProvider);
-                    await authApi.deletePost(post.pid);
+                    // final authApi = ref.read(authApiProvider);
+                    // await authApi.deletePost(post.pid);
+                    final postVm = ref.read(postVmProvider.notifier);
+                    await postVm.deletePost(post.pid);
                     ref.invalidate(postListProvider);
                   }
                 },

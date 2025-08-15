@@ -6,7 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// 프로필 이미지 위젯
 Widget profileImageWidget({
   required BuildContext context,
-  required double? size,
+  double? height,
+  double? width,
+  double? size,
   required String? profileImg,
   required String category,
 }) {
@@ -14,8 +16,8 @@ Widget profileImageWidget({
   return Padding(
     padding: EdgeInsets.all(5.0.r),
     child: Container(
-      width: size,
-      height: size,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(10.0.r),
@@ -44,8 +46,8 @@ Widget profileImageWidget({
                     category: category,
                     fileName: profileImg,
                   ),
-                  width: size,
-                  height: size,
+                  width: width,
+                  height: height,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
                   fadeOutDuration: Duration.zero,
