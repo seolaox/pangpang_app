@@ -21,6 +21,7 @@ class AppTabbar extends ConsumerStatefulWidget {
 class _AppTabbarState extends ConsumerState<AppTabbar>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  
 
   // 탭 변경 완료를 추적하기 위한 Completer
   Completer? _tabChangeCompleter;
@@ -70,6 +71,9 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
       appBar: AppAppBar(),
       body: TabBarView(
         controller: _tabController,
+
+        //스와이프에 의한 탭 이동이 비활성화
+        physics: const NeverScrollableScrollPhysics(),
         children: [ HomeView(), const FoodView(), const RecordView(), const ProfileView()],
       ),
       bottomNavigationBar: _buildTab(context),

@@ -13,4 +13,7 @@ class ApiEndpoint {
   static const String postUpdate = "post/update";
   static const String postDelete = "post/delete";
 
+  static const String getPlaces = "place/my_places";
+  static const String getAnimalHospitals = "place/animal_hospitals";
+
 }
