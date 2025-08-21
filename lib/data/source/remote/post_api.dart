@@ -1,11 +1,13 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pangpang_app/data/model/post_model.dart';
+import 'package:pangpang_app/data/source/remote/dio_client.dart';
 import 'package:pangpang_app/util/api_endpoint.dart';
 import 'package:dio/dio.dart';
 import 'package:pangpang_app/util/token_manager.dart';
 
 class PostApi {
-  final Dio _dio = Dio();
+  // final Dio _dio = Dio();
+  Dio get _dio => DioClient().dio;
 
   String? baseUrl = dotenv.env['baseurl'];
 

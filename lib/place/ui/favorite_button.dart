@@ -60,29 +60,25 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
             child: IconButton(
               onPressed: _isLoading ? null : _toggleFavorite,
               iconSize: 24,
-              icon:
-                  _isLoading
-                      ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            widget.hospital.isFavorite
-                                ? Colors.red
-                                : Colors.grey,
-                          ),
+              icon: _isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          widget.hospital.isFavorite ? Colors.red : Colors.grey,
                         ),
-                      )
-                      : Icon(
-                        widget.hospital.isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color:
-                            widget.hospital.isFavorite
-                                ? Colors.red
-                                : Colors.grey[600],
                       ),
+                    )
+                  : Icon(
+                      widget.hospital.isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: widget.hospital.isFavorite
+                          ? Colors.red
+                          : Colors.grey[600],
+                    ),
             ),
           ),
         );
@@ -93,18 +89,18 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
   Future<void> _toggleFavorite() async {
     if (_isLoading) return;
 
-    // 먼저 토큰 확인
+    // 간단한 토큰 존재 여부만 확인 (TokenInterceptor가 자동 갱신 처리)
     final token = await TokenManager.getAccessToken();
     if (token == null || token.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
+            content: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.login, color: Colors.white, size: 16),
-                const SizedBox(width: 8),
-                const Text('로그인이 필요한 기능입니다'),
+                Icon(Icons.login, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('로그인이 필요한 기능입니다'),
               ],
             ),
             backgroundColor: Colors.orange,
@@ -137,6 +133,7 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
     });
 
     try {
+      // TokenInterceptor가 토큰 갱신을 자동으로 처리
       await ref
           .read(animalHospitalsProvider.notifier)
           .toggleFavorite(widget.hospital);

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:pangpang_app/data/source/remote/auth/dio_intercepter.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -22,7 +23,10 @@ class DioClient {
       ),
     );
 
-    // 인터셉터 추가
+    // 토큰 자동 갱신 인터셉터 추가 (가장 먼저)
+    _dio.interceptors.add(TokenInterceptor(_dio));
+
+    // 로깅 인터셉터 추가
     _dio.interceptors.add(
       LogInterceptor(
         requestBody: true,
@@ -33,7 +37,7 @@ class DioClient {
       ),
     );
 
-    // 에러 인터셉터
+    // 에러 인터셉터 (TokenInterceptor 이후에 실행됨)
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {

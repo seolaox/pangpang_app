@@ -8,7 +8,8 @@ import 'package:pangpang_app/place/domain/usecase/add_favorite.dart';
 import 'package:pangpang_app/place/domain/usecase/delete_favorite.dart';
 import 'package:pangpang_app/place/domain/usecase/get_my_place.dart';
 import 'package:pangpang_app/place/domain/usecase/hospital_usecase.dart';
-import 'package:pangpang_app/place/presentaion/dio_client.dart';
+import 'package:pangpang_app/place/domain/usecase/search_hospital.dart';
+import 'package:pangpang_app/data/source/remote/dio_client.dart';
 import 'package:pangpang_app/util/token_manager.dart';
 
 final dioProvider = Provider<Dio>((ref) => DioClient().dio);
@@ -39,6 +40,9 @@ final deleteFavoritePlaceUseCaseProvider = Provider((ref) {
 final getMyPlacesUseCaseProvider = Provider((ref) {
   return GetMyPlacesUseCase(ref.watch(placeRepositoryProvider));
 });
+
+//전체보기 모드 상태 Provider
+final showAllHospitalsProvider = StateProvider<bool>((ref) => false);
 
 // State Providers
 final animalHospitalsProvider = StateNotifierProvider<AnimalHospitalsNotifier, AsyncValue<List<AnimalHospitalEntity>>>((ref) {
@@ -177,3 +181,205 @@ class MyPlacesNotifier extends StateNotifier<AsyncValue<List<PlaceEntity>>> {
     );
   }
 }
+
+// 검색 UseCase Provider
+final searchHospitalsUseCaseProvider = Provider((ref) {
+  return SearchHospitalsUseCase(ref.watch(placeRepositoryProvider));
+});
+
+// 장소 상세 정보 Provider
+final placeDetailProvider = StateNotifierProvider.family<PlaceDetailNotifier, AsyncValue<PlaceEntity?>, int>((ref, placeId) {
+  return PlaceDetailNotifier(
+    ref.watch(searchHospitalsUseCaseProvider),
+    placeId,
+  );
+});
+
+// 검색 결과 Provider (향상된 버전)
+final hospitalSearchProvider = StateNotifierProvider<HospitalSearchNotifier, AsyncValue<List<AnimalHospitalEntity>>>((ref) {
+  return HospitalSearchNotifier(
+    ref.watch(searchHospitalsUseCaseProvider),
+  );
+});
+
+// 즐겨찾기 검색 Provider
+final favoriteSearchProvider = StateNotifierProvider<FavoriteSearchNotifier, AsyncValue<List<PlaceEntity>>>((ref) {
+  return FavoriteSearchNotifier(
+    ref.watch(searchHospitalsUseCaseProvider),
+  );
+});
+
+// 검색 상태 Provider들
+final searchQueryProvider = StateProvider<String>((ref) => '');
+final searchModeProvider = StateProvider<SearchMode>((ref) => SearchMode.hospitals);
+final recentSearchesProvider = StateProvider<List<String>>((ref) => []);
+
+// 검색 모드 enum
+enum SearchMode {
+  hospitals,    // 동물병원 검색
+  favorites,    // 즐겨찾기 검색
+}
+
+// 장소 상세 정보 관리 StateNotifier
+class PlaceDetailNotifier extends StateNotifier<AsyncValue<PlaceEntity?>> {
+  final SearchHospitalsUseCase _searchUseCase;
+  final int placeId;
+
+  PlaceDetailNotifier(this._searchUseCase, this.placeId) : super(const AsyncValue.loading()) {
+    loadPlaceDetail();
+  }
+
+  Future<void> loadPlaceDetail() async {
+    state = const AsyncValue.loading();
+    
+    final result = await _searchUseCase.getPlaceDetail(placeId);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (place) => state = AsyncValue.data(place),
+    );
+  }
+
+  Future<void> refresh() async {
+    await loadPlaceDetail();
+  }
+}
+
+// 향상된 병원 검색 StateNotifier
+class HospitalSearchNotifier extends StateNotifier<AsyncValue<List<AnimalHospitalEntity>>> {
+  final SearchHospitalsUseCase _searchUseCase;
+  
+  String _currentQuery = '';
+  List<AnimalHospitalEntity> _allHospitals = [];
+
+  HospitalSearchNotifier(this._searchUseCase) : super(const AsyncValue.loading());
+
+  String get currentQuery => _currentQuery;
+  bool get hasSearchResults => _currentQuery.isNotEmpty;
+  int get totalHospitals => _allHospitals.length;
+
+  // 초기 병원 목록 로드
+  Future<void> loadAllHospitals() async {
+    state = const AsyncValue.loading();
+    
+    final result = await _searchUseCase.searchHospitals(''); // 빈 쿼리로 전체 목록
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (hospitals) {
+        _allHospitals = hospitals;
+        state = AsyncValue.data(hospitals);
+      },
+    );
+  }
+
+  // 검색 수행
+  Future<void> search(String query) async {
+    _currentQuery = query.trim();
+    
+    if (_currentQuery.isEmpty) {
+      // 검색어가 없으면 전체 목록 표시
+      state = AsyncValue.data(_allHospitals);
+      return;
+    }
+
+    state = const AsyncValue.loading();
+    
+    final result = await _searchUseCase.searchHospitals(_currentQuery);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (filteredHospitals) => state = AsyncValue.data(filteredHospitals),
+    );
+  }
+
+  // 검색 초기화
+  void clearSearch() {
+    _currentQuery = '';
+    state = AsyncValue.data(_allHospitals);
+  }
+
+  // 특정 병원 찾기 (ID나 이름으로)
+  AnimalHospitalEntity? findHospital({int? id, String? name}) {
+    final hospitals = state.asData?.value ?? [];
+    
+    if (id != null) {
+      // ID로 찾기는 불가능 (AnimalHospitalEntity에 ID가 없음)
+      return null;
+    }
+    
+    if (name != null) {
+      return hospitals.where((h) => h.name == name).firstOrNull;
+    }
+    
+    return null;
+  }
+}
+
+// 즐겨찾기 검색 StateNotifier
+class FavoriteSearchNotifier extends StateNotifier<AsyncValue<List<PlaceEntity>>> {
+  final SearchHospitalsUseCase _searchUseCase;
+  
+  String _currentQuery = '';
+  List<PlaceEntity> _allFavorites = [];
+
+  FavoriteSearchNotifier(this._searchUseCase) : super(const AsyncValue.loading());
+
+  String get currentQuery => _currentQuery;
+  bool get hasSearchResults => _currentQuery.isNotEmpty;
+  int get totalFavorites => _allFavorites.length;
+
+  // 즐겨찾기 목록 로드
+  Future<void> loadAllFavorites() async {
+    state = const AsyncValue.loading();
+    
+    final result = await _searchUseCase.searchMyPlaces(''); // 빈 쿼리로 전체 목록
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (favorites) {
+        _allFavorites = favorites;
+        state = AsyncValue.data(favorites);
+      },
+    );
+  }
+
+  // 즐겨찾기 검색
+  Future<void> search(String query) async {
+    _currentQuery = query.trim();
+    
+    if (_currentQuery.isEmpty) {
+      state = AsyncValue.data(_allFavorites);
+      return;
+    }
+
+    state = const AsyncValue.loading();
+    
+    final result = await _searchUseCase.searchMyPlaces(_currentQuery);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (filteredFavorites) => state = AsyncValue.data(filteredFavorites),
+    );
+  }
+
+  // 검색 초기화
+  void clearSearch() {
+    _currentQuery = '';
+    state = AsyncValue.data(_allFavorites);
+  }
+
+  // 특정 즐겨찾기 상세 정보 가져오기
+  Future<PlaceEntity?> getPlaceDetail(int placeId) async {
+    final result = await _searchUseCase.getPlaceDetail(placeId);
+    
+    return result.fold(
+      (error) {
+        print('장소 상세 정보 로드 실패: $error');
+        return null;
+      },
+      (place) => place,
+    );
+  }
+}
+

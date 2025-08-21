@@ -126,7 +126,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
           ),
           const SizedBox(height: 8),
           Text(
-            '지도에서 동물병원을 선택하고\n하트 버튼을 눌러 즐겨찾기에 추가해보세요',
+            '지도에서 동물병원을 선택하고\n마크 버튼을 눌러 즐겨찾기에 추가해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,

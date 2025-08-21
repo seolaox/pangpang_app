@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pangpang_app/app_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:pangpang_app/place/presentaion/dio_client.dart';
+import 'package:pangpang_app/data/source/remote/dio_client.dart';
 
 
 void main() async {
