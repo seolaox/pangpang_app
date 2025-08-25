@@ -6,7 +6,6 @@ import 'package:dio/dio.dart';
 import 'package:pangpang_app/util/token_manager.dart';
 
 class PostApi {
-  // final Dio _dio = Dio();
   Dio get _dio => DioClient().dio;
 
   String? baseUrl = dotenv.env['baseurl'];
@@ -26,6 +25,9 @@ class PostApi {
 
     if (response.statusCode == 200) {
       final data = response.data;
+      
+      // 새로운 응답 구조에 맞게 수정
+      // 서버 응답이 { "posts": [...], "total_count": 0, "page": 0, "size": 0 } 형태
       final postsJson = data['posts'] as List<dynamic>;
       return postsJson.map((json) => PostModel.fromJson(json)).toList();
     } else {

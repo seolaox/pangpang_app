@@ -115,7 +115,7 @@ class _SearchAppBarState extends ConsumerState<SearchAppBar>
         if (!_isSearchMode) ...[
           IconButton(
             onPressed: widget.onShowFavorites,
-            icon: const Icon(Icons.bookmark),
+            icon: const Icon(Icons.favorite),
             tooltip: '즐겨찾기',
           ),
         ],

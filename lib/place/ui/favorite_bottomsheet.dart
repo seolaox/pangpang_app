@@ -52,9 +52,9 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
             child: Row(
               children: [
                 const Icon(
-                  Icons.bookmark,
+                  Icons.favorite,
                   size: 24,
-                  color: Colors.blue,
+                  color: Color.fromARGB(255, 248, 133, 242),
                 ),
                 const SizedBox(width: 12),
                 const Text(

@@ -22,7 +22,7 @@ class HomeView extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
-          ref.read(thumbnailIndexProvider.notifier).state = 0; // 썸네일 인덱스 초기화
+          ref.read(thumbnailIndexProvider.notifier).state = 0;
           ref.read(imageListProvider.notifier).clear();
           GoRouter.of(context).push('/home_detail');
           ref.invalidate(postListProvider);
@@ -44,13 +44,13 @@ class HomeView extends ConsumerWidget {
               final post = posts[index];
               final getImages = GetImages();
 
-              // 썸네일 URL
+              // 썸네일 URL (pthumbnail 필드 직접 사용)
               final thumbnailUrl = getImages.getImg(
                 category: 'post',
                 fileName: post.pthumbnail,
               );
 
-              // 모든 이미지 URL들
+              // 모든 이미지 URLs
               final allImageUrls =
                   post.pimages
                       .map<String>(
@@ -109,8 +109,6 @@ class HomeView extends ConsumerWidget {
                   );
 
                   if (confirmed == true) {
-                    // final authApi = ref.read(authApiProvider);
-                    // await authApi.deletePost(post.pid);
                     final postVm = ref.read(postVmProvider.notifier);
                     await postVm.deletePost(post.pid);
                     ref.invalidate(postListProvider);
@@ -172,6 +170,40 @@ class HomeView extends ConsumerWidget {
                                       ),
                                     )
                                     .toList(),
+                          ),
+                        ),
+                      ],
+
+                      // 비디오 표시 인디케이터 (새로 추가)
+                      if (post.hasVideo) ...[
+                        SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.play_circle_filled,
+                                color: Colors.red,
+                                size: 16,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '동영상 포함',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                '미디어 ${post.mediaCount}개',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

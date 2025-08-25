@@ -37,8 +37,9 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
             .setImages(widget.initialImages!.cast<dynamic>());
 
         if (widget.post != null) {
-          ref.read(thumbnailIndexProvider.notifier).state =
-              widget.post!.pthumbnailIndex;
+          // pthumbnail 파일명을 기반으로 인덱스 찾기
+          final thumbnailIndex = widget.post!.pimages.indexOf(widget.post!.pthumbnail);
+          ref.read(thumbnailIndexProvider.notifier).state = thumbnailIndex >= 0 ? thumbnailIndex : 0;
         } else if (widget.initialThumbnail != null) {
           final idx = widget.initialImages!.indexOf(widget.initialThumbnail!);
           ref.read(thumbnailIndexProvider.notifier).state = idx == -1 ? 0 : idx;
@@ -109,11 +110,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
 
     data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
 
-    // // 모든 이미지를 images 필드로 전송
-    // for (int i = 0; i < multipartFiles.length; i++) {
-    //   data.files.add(MapEntry("images", multipartFiles[i]));
-    // }
-
     try {
       final postVm = ref.read(postVmProvider.notifier);
       if (widget.post == null) {
@@ -158,14 +154,13 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton.icon(
-              onPressed: _pickImages, // 원하는 함수 연결
-              icon: Icon(Icons.add_photo_alternate), // 아이콘 지정
+              onPressed: _pickImages,
+              icon: Icon(Icons.add_photo_alternate),
               label: Text(
                 '사진추가',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ), // 버튼 텍스트
+              ),
               style: ElevatedButton.styleFrom(
-                // minimumSize: Size(double.infinity, 52),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -259,26 +254,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                               ),
                             ),
                           ),
-                          // 이미지 추가 버튼
-                          // Positioned(
-                          //   left: 10,
-                          //   top: 10,
-                          //   child: GestureDetector(
-                          //     onTap: _pickImages,
-                          //     child: Container(
-                          //       padding: EdgeInsets.all(8),
-                          //       decoration: BoxDecoration(
-                          //         color: Colors.black54,
-                          //         borderRadius: BorderRadius.circular(20),
-                          //       ),
-                          //       child: Icon(
-                          //         Icons.add_photo_alternate,
-                          //         color: Colors.white,
-                          //         size: 20,
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
                         ],
                       ),
             ),

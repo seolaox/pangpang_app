@@ -188,16 +188,16 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.bookmark,
+                          Icons.favorite,
                           size: 12,
-                          color: Colors.blue[600],
+                          color: Color.fromARGB(255, 248, 133, 242),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '목록',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.blue[600],
+                            color: Colors.black,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -322,7 +322,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
               if (hospital.isFavorite)
                 const Icon(
                   Icons.favorite,
-                  color: Colors.red,
+                  color: Color.fromARGB(255, 248, 133, 242),
                   size: 16,
                 ),
               const SizedBox(width: 8),
