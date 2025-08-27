@@ -1,4 +1,4 @@
-import 'package:pangpang_app/place/core/result.dart';
+import 'package:pangpang_app/core/result.dart';
 import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
 import 'package:pangpang_app/place/domain/entity/place_entity.dart';
 import 'package:pangpang_app/place/domain/repository/place_repository.dart';
@@ -18,10 +18,8 @@ class SearchHospitalsUseCase {
     return cleanText.contains(cleanQuery);
   }
 
-  // 동물병원 검색 (클라이언트 사이드)강남
   Future<Result<List<AnimalHospitalEntity>>> searchHospitals(String query) async {
     try {
-      // 전체 동물병원 목록 가져오기
       final hospitalsResult = await repository.getAnimalHospitals();
       
       return hospitalsResult.fold(
@@ -68,7 +66,7 @@ class SearchHospitalsUseCase {
     }
   }
 
-  // 특정 장소 상세 정보 가져오기 (getPlaceById API 활용)
+  // 특정 장소 상세 정보 가져오기
   Future<Result<PlaceEntity>> getPlaceDetail(int placeId) async {
     try {
       final result = await repository.getPlaceById(placeId);
@@ -78,72 +76,5 @@ class SearchHospitalsUseCase {
     }
   }
 
-  // 즐겨찾기 목록에서 검색
-  Future<Result<List<PlaceEntity>>> searchMyPlaces(String query) async {
-    try {
-      final placesResult = await repository.getMyPlaces();
-      
-      return placesResult.fold(
-        (error) => Result.failure(error),
-        (places) {
-          if (query.trim().isEmpty) {
-            return Result.success(places);
-          }
-          
-          final trimmedQuery = query.trim();
-          
-          final filteredPlaces = places.where((place) {
-            return _containsQuery(place.pname, trimmedQuery);
-          }).toList();
-          
-          // // 관련성 순으로 정렬
-          // filteredPlaces.sort((a, b) {
-          //   final lowercaseQuery = trimmedQuery.toLowerCase();
-            
-          //   // 이름이 정확히 일치하는 것을 최우선
-          //   final aExactNameMatch = a.pname.toLowerCase() == lowercaseQuery;
-          //   final bExactNameMatch = b.pname.toLowerCase() == lowercaseQuery;
-            
-          //   if (aExactNameMatch && !bExactNameMatch) return -1;
-          //   if (!aExactNameMatch && bExactNameMatch) return 1;
-            
-          //   final aNameMatch = a.pname.toLowerCase().startsWith(lowercaseQuery);
-          //   final bNameMatch = b.pname.toLowerCase().startsWith(lowercaseQuery);
-            
-          //   if (aNameMatch && !bNameMatch) return -1;
-          //   if (!aNameMatch && bNameMatch) return 1;
-            
-          //   return a.pname.length.compareTo(b.pname.length);
-          // });
-          
-          return Result.success(filteredPlaces);
-        },
-      );
-    } catch (e) {
-      return Result.failure('즐겨찾기 검색 중 오류가 발생했습니다: $e');
-    }
-  }
 
-  // 최근 검색한 장소들의 상세 정보 가져오기
-  Future<Result<List<PlaceEntity>>> getRecentPlacesDetails(List<int> placeIds) async {
-    try {
-      final List<PlaceEntity> places = [];
-      
-      for (final placeId in placeIds) {
-        final result = await repository.getPlaceById(placeId);
-        result.fold(
-          (error) {
-            print('장소 ID $placeId 로드 실패: $error');
-          },
-          (place) {
-            places.add(place);
-          },
-        );
-      }
-      
-      return Result.success(places);
-    } catch (e) {
-      return Result.failure('최근 장소 정보를 불러올 수 없습니다: $e');
-    }
-  }
 }

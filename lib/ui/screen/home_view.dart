@@ -44,13 +44,11 @@ class HomeView extends ConsumerWidget {
               final post = posts[index];
               final getImages = GetImages();
 
-              // 썸네일 URL (pthumbnail 필드 직접 사용)
               final thumbnailUrl = getImages.getImg(
                 category: 'post',
                 fileName: post.pthumbnail,
               );
 
-              // 모든 이미지 URLs
               final allImageUrls =
                   post.pimages
                       .map<String>(
@@ -109,8 +107,8 @@ class HomeView extends ConsumerWidget {
                   );
 
                   if (confirmed == true) {
-                    final postVm = ref.read(postVmProvider.notifier);
-                    await postVm.deletePost(post.pid);
+                    final postCrud = ref.read(postCrudProvider.notifier);
+                    await postCrud.deletePost(post.pid);
                     ref.invalidate(postListProvider);
                   }
                 },
@@ -121,7 +119,6 @@ class HomeView extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 썸네일 이미지 (크게 표시)
                       if (post.pthumbnail.isNotEmpty)
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: 230),
@@ -138,7 +135,6 @@ class HomeView extends ConsumerWidget {
                           ),
                         ),
 
-                      // 썸네일을 제외한 나머지 이미지들 (작게 표시)
                       if (otherImageUrls.isNotEmpty) ...[
                         SizedBox(height: 4),
                         SizedBox(
@@ -174,40 +170,7 @@ class HomeView extends ConsumerWidget {
                         ),
                       ],
 
-                      // 비디오 표시 인디케이터 (새로 추가)
-                      if (post.hasVideo) ...[
-                        SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.play_circle_filled,
-                                color: Colors.red,
-                                size: 16,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '동영상 포함',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Spacer(),
-                              Text(
-                                '미디어 ${post.mediaCount}개',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-
+                     
                       Divider(),
 
                       Padding(

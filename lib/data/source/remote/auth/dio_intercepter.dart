@@ -10,7 +10,7 @@ class TokenInterceptor extends Interceptor {
   final String? baseUrl = dotenv.env['baseurl'];
   final ProviderContainer? _providerContainer;
   
-  // 토큰 갱신 중인지 확인하는 플래그
+  // 토큰 갱신 중인지 확인
   bool _isRefreshing = false;
   final List<Completer<String?>> _refreshCompleters = [];
   
@@ -39,12 +39,10 @@ class TokenInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // 401 에러 (토큰 만료)인 경우에만 토큰 갱신 시도
     if (err.response?.statusCode == 401) {
-      print('토큰 만료 감지, 토큰 갱신 시도...');
       
       // 토큰 갱신 API 자체의 401 에러는 처리하지 않음
       if (err.requestOptions.path.contains('api/auth/refresh') ||
           err.requestOptions.path.contains('auth/refresh')) {
-        print('토큰 갱신 API 자체가 401 - 로그아웃 처리');
         await _handleTokenRefreshFailure();
         handler.next(err);
         return;

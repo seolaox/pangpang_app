@@ -1,4 +1,4 @@
-import 'package:pangpang_app/place/core/result.dart';
+import 'package:pangpang_app/core/result.dart';
 import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
 import 'package:pangpang_app/place/domain/repository/place_repository.dart';
 
@@ -19,14 +19,12 @@ class GetAnimalHospitalsUseCase {
 
         return favoritesResult.fold(
           (error) {
-            // 인증 오류인 경우 즐겨찾기 없이 병원 목록만 반환
             print('즐겨찾기 로드 실패: $error');
             return Result.success(hospitals);
           },
           (favorites) {
-            print('즐겨찾기 ${favorites.length}개 로드됨');
+            print('즐겨찾기 ${favorites.length}개');
 
-            // 즐겨찾기 상태 정확히 업데이트
             final updatedHospitals =
                 hospitals.map((hospital) {
                   final isFavorite = favorites.any(

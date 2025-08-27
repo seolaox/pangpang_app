@@ -1,6 +1,6 @@
 
 
-import 'package:pangpang_app/place/core/result.dart';
+import 'package:pangpang_app/core/result.dart';
 import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
 import 'package:pangpang_app/place/domain/entity/place_entity.dart';
 

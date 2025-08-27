@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
-import 'package:pangpang_app/place/ui/favorite_button.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pangpang_app/place/widget/favorite_button.dart';
 
 
 class PlaceBottomSheet extends ConsumerWidget {
@@ -31,7 +30,6 @@ class PlaceBottomSheet extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 핸들
           Container(
             width: 40,
             height: 4,
@@ -47,7 +45,6 @@ class PlaceBottomSheet extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 제목과 즐겨찾기 버튼
                 Row(
                   children: [
                     Expanded(
@@ -65,22 +62,19 @@ class PlaceBottomSheet extends ConsumerWidget {
                 
                 const SizedBox(height: 16),
                 
-                // 전화번호
                 if (hospital.phone.isNotEmpty) ...[
                   _buildInfoRow(
                     icon: Icons.phone,
                     text: hospital.phone,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
                 
-                // 주소
                 _buildInfoRow(
                   icon: Icons.location_on,
                   text: hospital.address,
 
                 ),
-                
                 const SizedBox(height: 24),
 
               ],
@@ -107,7 +101,7 @@ class PlaceBottomSheet extends ConsumerWidget {
             Icon(
               icon,
               size: 18,
-              color: Colors.grey[600],
+              color: Colors.blue
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -120,14 +114,6 @@ class PlaceBottomSheet extends ConsumerWidget {
                 ),
               ),
             ),
-            if (onTap != null) ...[
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 12,
-                color: Colors.grey[400],
-              ),
-            ],
           ],
         ),
       ),

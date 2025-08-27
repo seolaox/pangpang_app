@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/place/presentaion/place_provider.dart';
-import 'package:pangpang_app/place/ui/favorite_bottomsheet.dart';
-import 'package:pangpang_app/place/ui/map_widget.dart';
-import 'package:pangpang_app/place/ui/searchbar_bottomsheet.dart';
+import 'package:pangpang_app/place/widget/favorite_bottomsheet.dart';
+import 'package:pangpang_app/place/widget/map_widget.dart';
+import 'package:pangpang_app/place/widget/searchbar_bottomsheet.dart';
 import 'package:pangpang_app/ui/screen/searchbar.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
@@ -20,7 +20,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   @override
   void initState() {
     super.initState();
-    // 초기 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(animalHospitalsProvider.notifier).loadAnimalHospitals();
       ref.read(hospitalSearchProvider.notifier).loadAllHospitals();
@@ -39,16 +38,14 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       ),
       body: Stack(
         children: [
-          // 지도 위젯
           const MapWidget(),
           
-          // 검색 결과 오버레이
           if (_isSearchMode && _currentSearchQuery.isNotEmpty)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              bottom: 100, // 하단 정보 표시 공간 확보
+              bottom: 100, 
               child: Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -64,7 +61,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                 ),
                 child: Column(
                   children: [
-                    // 검색 결과 헤더
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -110,7 +106,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       ),
                     ),
                     
-                    // 검색 결과 목록
                     Expanded(
                       child: searchState.when(
                         data: (results) {
@@ -150,7 +145,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
         ],
       ),
       
-      // 하단 정보 표시
       bottomSheet: _isSearchMode ? null : hospitalsState.when(
         data: (hospitals) => Container(
           width: double.infinity,
@@ -189,14 +183,14 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                       children: [
                         Icon(
                           Icons.favorite,
-                          size: 12,
-                          color: Color.fromARGB(255, 248, 133, 242),
+                          size: 15,
+                          color: Colors.red
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '목록',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             color: Colors.black,
                             fontWeight: FontWeight.w500,
                           ),
@@ -376,8 +370,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   }
 
   void _moveToHospitalOnMap(dynamic hospital, dynamic selectedHospitalProvider) {
-    // TODO: MapWidget의 컨트롤러를 통해 해당 위치로 이동
-    // 또는 Provider를 통해 선택된 병원 정보 전달
     print('지도에서 ${hospital.name} 위치로 이동: ${hospital.latitude}, ${hospital.longitude}');
     
     // 선택된 병원을 Provider에 저장 (MapWidget에서 사용할 수 있도록)

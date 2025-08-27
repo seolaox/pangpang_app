@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pangpang_app/place/presentaion/place_vm.dart';
 import 'package:pangpang_app/place/domain/entity/place_entity.dart';
 import 'package:pangpang_app/place/presentaion/place_provider.dart';
 
@@ -35,7 +35,6 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
       ),
       child: Column(
         children: [
-          // 핸들
           Container(
             width: 40,
             height: 4,
@@ -46,7 +45,6 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
             ),
           ),
           
-          // 헤더
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
@@ -54,7 +52,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                 const Icon(
                   Icons.favorite,
                   size: 24,
-                  color: Color.fromARGB(255, 248, 133, 242),
+                  color: Colors.red
                 ),
                 const SizedBox(width: 12),
                 const Text(
@@ -78,7 +76,6 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
           
           const Divider(height: 1),
           
-          // 목록
           Expanded(
             child: myPlacesState.when(
               data: (places) {
@@ -126,7 +123,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
           ),
           const SizedBox(height: 8),
           Text(
-            '지도에서 동물병원을 선택하고\n마크 버튼을 눌러 즐겨찾기에 추가해보세요',
+            '지도에서 동물병원을 선택하고\n찜하기 버튼을 눌러 즐겨찾기에 추가해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -213,15 +210,12 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             Navigator.pop(context);
-            // TODO: 지도에서 해당 위치로 이동
-            _moveToLocation(place);
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 제목 행
                 Row(
                   children: [
                     Expanded(
@@ -263,7 +257,6 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                 
                 const SizedBox(height: 8),
                 
-                // 전화번호
                 if (place.pphone.isNotEmpty) ...[
                   Row(
                     children: [
@@ -389,39 +382,5 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
     }
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final uri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
 
-  Future<void> _openMap(PlaceEntity place) async {
-    // 카카오맵 앱으로 길찾기
-    final kakaoMapUri = Uri.parse(
-      'kakaomap://route?ep=${place.latitude},${place.longitude}&by=CAR',
-    );
-    
-    // 구글맵 길찾기 (웹)
-    final googleMapUri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}',
-    );
-
-    try {
-      if (await canLaunchUrl(kakaoMapUri)) {
-        await launchUrl(kakaoMapUri);
-      } else {
-        await launchUrl(googleMapUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      print('지도 앱 실행 오류: $e');
-    }
-  }
-
-  void _moveToLocation(PlaceEntity place) {
-    // TODO: 지도 컨트롤러를 통해 해당 위치로 이동
-    // MapWidget에서 컨트롤러를 외부에 노출하거나 
-    // Provider를 통해 위치 이동 기능 구현
-    print('지도에서 ${place.pname} 위치로 이동: ${place.latitude}, ${place.longitude}');
-  }
 }

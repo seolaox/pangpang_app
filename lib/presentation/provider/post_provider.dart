@@ -1,31 +1,13 @@
-import 'dart:io';
-
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pangpang_app/data/model/post_model.dart';
-import 'package:pangpang_app/data/repository/post_repo_impl.dart';
-
-import 'package:pangpang_app/data/source/remote/auth/auth_api.dart';
-import 'package:pangpang_app/data/source/remote/post_api.dart';
 import 'package:pangpang_app/domain/use_case/post_use_case.dart';
+import 'package:pangpang_app/presentation/vm/post_vm.dart';
 
-// final authApiProvider = Provider((ref) => AuthApi());
 
-// Use Case Provider
-final postUseCaseProvider = Provider<PostUseCase>((ref) {
-  return PostUseCase(PostRepoImpl(PostApi()));
-});
+final imageListProvider = StateNotifierProvider<ImageListNotifier, List<dynamic>>(
+  (ref) => ImageListNotifier(),
+);
 
-// Post List Provider
-final postListProvider = FutureProvider.autoDispose<List<PostModel>>((ref) async {
-  final postUseCase = ref.watch(postUseCaseProvider);
-  return await postUseCase.fetchPosts(page: 1, size: 10);
-});
-
-// Thumbnail Index Provider
-final thumbnailIndexProvider = StateProvider<int>((ref) => 0);
-
-// Image List Notifier
 class ImageListNotifier extends StateNotifier<List<dynamic>> {
   ImageListNotifier() : super([]);
 
@@ -44,6 +26,51 @@ class ImageListNotifier extends StateNotifier<List<dynamic>> {
   void clear() => state = [];
 }
 
-final imageListProvider = StateNotifierProvider<ImageListNotifier, List<dynamic>>(
-  (ref) => ImageListNotifier(),
-);
+class PostCrudNotifier extends StateNotifier<AsyncValue<void>> {
+  final PostUseCase _postUseCase;
+  final Ref _ref;
+
+  PostCrudNotifier(this._postUseCase, this._ref) : super(const AsyncValue.data(null));
+
+  Future<void> createPost(FormData formData) async {
+    state = const AsyncValue.loading();
+    
+    final result = await _postUseCase.createPost(formData);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (_) {
+        _ref.invalidate(postListProvider);
+        state = const AsyncValue.data(null);
+      },
+    );
+  }
+
+  Future<void> updatePost(String postId, FormData formData) async {
+    state = const AsyncValue.loading();
+    
+    final result = await _postUseCase.updatePost(postId, formData);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (_) {
+        _ref.invalidate(postListProvider);
+        state = const AsyncValue.data(null);
+      },
+    );
+  }
+
+  Future<void> deletePost(String postId) async {
+    state = const AsyncValue.loading();
+    
+    final result = await _postUseCase.deletePost(postId);
+    
+    result.fold(
+      (error) => state = AsyncValue.error(error, StackTrace.current),
+      (_) {
+        _ref.invalidate(postListProvider);
+        state = const AsyncValue.data(null);
+      },
+    );
+  }
+}

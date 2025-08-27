@@ -5,14 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/presentation/provider/user_provider.dart';
 import 'package:pangpang_app/ui/widget/user_widget/animal_list.dart';
-import 'package:pangpang_app/ui/widget/user_widget/family_profile.dart';
 import 'package:pangpang_app/ui/widget/user_widget/logout_button.dart';
 import 'package:pangpang_app/ui/widget/user_widget/user_profile.dart';
 import 'package:pangpang_app/util/style/my_text_style.dart';
 
 class UserView extends ConsumerStatefulWidget {
-  final String? uid; // uid를 받아서 해당 사용자 정보 조회
-  final UserModel? initialUser; // 초기 데이터 (옵션)
+  final String? uid; 
+  final UserModel? initialUser; 
 
   const UserView({
     super.key,
@@ -29,7 +28,6 @@ class _UserViewState extends ConsumerState<UserView> {
   void initState() {
     super.initState();
     
-    // 초기 데이터 로딩
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserData();
     });
@@ -39,10 +37,8 @@ class _UserViewState extends ConsumerState<UserView> {
     final userNotifier = ref.read(userNotifierProvider.notifier);
     
     if (widget.uid != null) {
-      // 특정 사용자 정보 로드
       userNotifier.loadUserProfile(widget.uid!);
     } else {
-      // 🔥 현재 사용자 정보 로드 (전체 정보 포함)
       userNotifier.loadCurrentUser();
     }
   }
@@ -62,7 +58,7 @@ class _UserViewState extends ConsumerState<UserView> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('사용자 정보를 불러오는 중...'),
+              Text('사용자 정보를 불러오는 중!'),
             ],
           ),
         ),
@@ -129,7 +125,6 @@ class _UserViewState extends ConsumerState<UserView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔥 불완전한 데이터 경고 표시
           if (user.families.isEmpty && user.animals.isEmpty) ...[
             Container(
               width: double.infinity,
@@ -144,17 +139,14 @@ class _UserViewState extends ConsumerState<UserView> {
             ),
           ],
           
-          // 프로필 섹션
           UserProfileSection(user: user),
           
           SizedBox(height: 24.h),
-          
-          // 동물 목록 섹션
+
           AnimalListSection(animals: user.animals),
           
           SizedBox(height: 24.h),
           
-          // 로그아웃 버튼
           const Center(child: LogoutButton()),
         ],
       ),

@@ -42,7 +42,6 @@ class PostModel {
     this.media,
   });
 
-  // pthumbnailIndex는 이제 pthumbnail 파일명을 기반으로 계산
   int get pthumbnailIndex {
     if (pthumbnail.isNotEmpty && pimages.isNotEmpty) {
       final index = pimages.indexOf(pthumbnail);

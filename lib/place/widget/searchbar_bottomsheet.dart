@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pangpang_app/place/presentaion/place_vm.dart';
 import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
 import 'package:pangpang_app/place/domain/entity/place_entity.dart';
-import 'package:pangpang_app/place/presentaion/place_provider.dart';
-import 'package:pangpang_app/place/ui/favorite_button.dart';
+import 'package:pangpang_app/place/widget/favorite_button.dart';
 
 class HospitalDetailSheet extends ConsumerStatefulWidget {
   final AnimalHospitalEntity hospital;
-  final int? placeId; // 즐겨찾기에 저장된 경우의 place ID
+  final int? placeId; 
 
   const HospitalDetailSheet({
     super.key,
@@ -21,24 +20,58 @@ class HospitalDetailSheet extends ConsumerStatefulWidget {
 }
 
 class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
+  PlaceEntity? _placeDetail;
+  bool _isLoadingDetail = false;
+  String? _detailError;
+
   @override
   void initState() {
     super.initState();
     // placeId가 있으면 상세 정보 로드
     if (widget.placeId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(placeDetailProvider(widget.placeId!).notifier).loadPlaceDetail();
+        _loadPlaceDetail();
+      });
+    }
+  }
+
+  Future<void> _loadPlaceDetail() async {
+    if (widget.placeId == null) return;
+
+    setState(() {
+      _isLoadingDetail = true;
+      _detailError = null;
+    });
+
+    try {
+      final result = await ref
+          .read(searchHospitalsUseCaseProvider)
+          .getPlaceDetail(widget.placeId!);
+
+      result.fold(
+        (error) {
+          setState(() {
+            _detailError = error;
+            _isLoadingDetail = false;
+          });
+        },
+        (place) {
+          setState(() {
+            _placeDetail = place;
+            _isLoadingDetail = false;
+          });
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _detailError = e.toString();
+        _isLoadingDetail = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // placeId가 있으면 상세 정보를 가져오고, 없으면 hospital 정보만 사용
-    final placeDetailState = widget.placeId != null
-        ? ref.watch(placeDetailProvider(widget.placeId!))
-        : null;
-
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.8,
@@ -52,7 +85,6 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 핸들
           Container(
             width: 40,
             height: 4,
@@ -63,7 +95,6 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
             ),
           ),
 
-          // 헤더
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
@@ -103,19 +134,17 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
                   const SizedBox(height: 24),
 
                   // 추가 정보 (placeId가 있는 경우)
-                  if (placeDetailState != null) ...[
-                    placeDetailState.when(
-                      data: (place) => place != null
-                          ? _buildAdditionalInfo(place)
-                          : const SizedBox.shrink(),
-                      loading: () => _buildLoadingWidget(),
-                      error: (error, _) => _buildErrorWidget(error.toString()),
-                    ),
+                  if (widget.placeId != null) ...[
+                    if (_isLoadingDetail)
+                      _buildLoadingWidget()
+                    else if (_detailError != null)
+                      _buildErrorWidget(_detailError!)
+                    else if (_placeDetail != null)
+                      _buildAdditionalInfo(_placeDetail!)
+                    else
+                      const SizedBox.shrink(),
                     const SizedBox(height: 24),
                   ],
-
-                  // 액션 버튼들
-                  _buildActionButtons(),
                 ],
               ),
             ),
@@ -129,45 +158,23 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 전화번호
         if (widget.hospital.phone.isNotEmpty) ...[
           _buildInfoRow(
             icon: Icons.phone,
             title: '전화번호',
             content: widget.hospital.phone,
-            onTap: () => _makePhoneCall(widget.hospital.phone),
-            actionIcon: Icons.call,
           ),
           const SizedBox(height: 16),
         ],
 
-        // 주소
         _buildInfoRow(
           icon: Icons.location_on,
           title: '주소',
           content: widget.hospital.address,
-          onTap: () => _openMap(),
-          actionIcon: Icons.directions,
         ),
 
         const SizedBox(height: 16),
 
-        // 좌표 정보
-        _buildInfoRow(
-          icon: Icons.my_location,
-          title: '위치',
-          content: '위도: ${widget.hospital.latitude.toStringAsFixed(6)}\n'
-                  '경도: ${widget.hospital.longitude.toStringAsFixed(6)}',
-        ),
-
-        // 즐겨찾기 상태
-        const SizedBox(height: 16),
-        _buildInfoRow(
-          icon: widget.hospital.isFavorite ? Icons.favorite : Icons.favorite_border,
-          title: '즐겨찾기',
-          content: widget.hospital.isFavorite ? '즐겨찾기에 등록됨' : '즐겨찾기에 등록되지 않음',
-          iconColor: widget.hospital.isFavorite ? Colors.red : Colors.grey,
-        ),
       ],
     );
   }
@@ -242,6 +249,19 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
             ),
           ),
         ],
+
+        // 새로고침 버튼
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton.icon(
+            onPressed: _loadPlaceDetail,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('새로고침'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue[600],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -251,7 +271,6 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
     required String title,
     required String content,
     VoidCallback? onTap,
-    IconData? actionIcon,
     Color? iconColor,
   }) {
     return InkWell(
@@ -292,14 +311,7 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
                 ],
               ),
             ),
-            if (actionIcon != null) ...[
-              const SizedBox(width: 8),
-              Icon(
-                actionIcon,
-                size: 16,
-                color: Colors.blue[600],
-              ),
-            ],
+         
           ],
         ),
       ),
@@ -339,68 +351,17 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
               style: TextStyle(color: Colors.red[700], fontSize: 12),
             ),
           ),
+          // 재시도 버튼
+          TextButton(
+            onPressed: _loadPlaceDetail,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[600],
+              minimumSize: const Size(60, 32),
+            ),
+            child: const Text('재시도', style: TextStyle(fontSize: 12)),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Column(
-      children: [
-        // 전화 및 길찾기 버튼
-        Row(
-          children: [
-            if (widget.hospital.phone.isNotEmpty) ...[
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _makePhoneCall(widget.hospital.phone),
-                  icon: const Icon(Icons.call, size: 18),
-                  label: const Text('전화하기'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _openMap,
-                icon: const Icon(Icons.directions, size: 18),
-                label: const Text('길찾기'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // 지도에서 보기 버튼
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: 지도에서 해당 위치로 이동
-              _moveToMapLocation();
-            },
-            icon: const Icon(Icons.map, size: 18),
-            label: const Text('지도에서 보기'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: Colors.blue[300]!),
-              foregroundColor: Colors.blue[600],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -410,35 +371,5 @@ class _HospitalDetailSheetState extends ConsumerState<HospitalDetailSheet> {
            '${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final uri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
 
-  Future<void> _openMap() async {
-    final kakaoMapUri = Uri.parse(
-      'kakaomap://route?ep=${widget.hospital.latitude},${widget.hospital.longitude}&by=CAR',
-    );
-    
-    final googleMapUri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${widget.hospital.latitude},${widget.hospital.longitude}',
-    );
-
-    try {
-      if (await canLaunchUrl(kakaoMapUri)) {
-        await launchUrl(kakaoMapUri);
-      } else {
-        await launchUrl(googleMapUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      print('지도 앱 실행 오류: $e');
-    }
-  }
-
-  void _moveToMapLocation() {
-    // TODO: MapWidget 컨트롤러를 통해 해당 위치로 이동
-    print('지도에서 ${widget.hospital.name} 위치로 이동: ${widget.hospital.latitude}, ${widget.hospital.longitude}');
-  }
 }

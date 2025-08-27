@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:pangpang_app/place/presentaion/place_provider.dart';
-import 'package:pangpang_app/place/ui/place_bottomsheet.dart';
+import 'package:pangpang_app/place/widget/place_bottomsheet.dart';
 
 class MapWidget extends ConsumerStatefulWidget {
   const MapWidget({super.key});
@@ -22,7 +22,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
   
   // 마커 아이콘 캐시
   NOverlayImage? _favoriteMarkerIcon;
-  NOverlayImage? _hospitalMarkerIcon;
 
   @override
   void initState() {
@@ -32,10 +31,10 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
 
   Future<void> _initializeMapSafely() async {
     try {
-      // 1. 먼저 마커 아이콘 미리 로드
+      // 1. 먼저 마커 아이콘 미리 로드!
       await _preloadMarkerIcons();
       
-      // 2. UI 빌드 후 데이터 로드
+      // 2. UI 빌드 후 데이터 로드!!!
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _loadFavoriteDataSafely();
@@ -55,12 +54,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         size: 32.0,
       );
       
-      _hospitalMarkerIcon = await _createCustomMarkerIcon(
-        icon: Icons.local_hospital,
-        backgroundColor: Colors.blue,
-        iconColor: Colors.white,
-        size: 32.0,
-      );
+
       
       debugPrint("마커 아이콘 로드 완료");
     } catch (e) {
@@ -81,7 +75,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
   Widget build(BuildContext context) {
     final myPlacesState = ref.watch(myPlacesProvider);
 
-    // 안전한 리스너 등록
     ref.listen<AsyncValue<List<dynamic>>>(myPlacesProvider, (previous, next) {
       if (!mounted || !_isMapReady || _controller == null) return;
       
@@ -93,19 +86,14 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
     return Scaffold(
       body: Stack(
         children: [
-          // 네이버 맵
           _buildNaverMapSafely(),
+        
           
-          // 범례 (즐겨찾기만)
-          _buildSimpleLegend(),
-          
-          // 로딩 인디케이터
           if (myPlacesState.isLoading)
             const Center(
               child: CircularProgressIndicator(backgroundColor: Colors.white),
             ),
             
-          // 에러 표시
           if (myPlacesState.hasError)
             _buildErrorWidget(myPlacesState.error.toString()),
         ],
@@ -121,7 +109,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
           locationButtonEnable: true,
           consumeSymbolTapEvents: false,
           initialCameraPosition: NCameraPosition(
-            target: NLatLng(37.5666102, 126.9783881), // 서울 시청 좌표
+            target: NLatLng(37.5666102, 126.9783881), 
             zoom: 12,
           ),
         ),
@@ -155,7 +143,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
             Text('지도를 불러올 수 없습니다'),
             ElevatedButton(
               onPressed: () {
-                setState(() {}); // 재시도
+                setState(() {}); 
               },
               child: Text('다시 시도'),
             ),
@@ -165,44 +153,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
     }
   }
 
-  Widget _buildSimpleLegend() {
-    return Positioned(
-      top: 50,
-      right: 16,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 248, 133, 242),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              '즐겨찾기',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildErrorWidget(String error) {
     return Center(
@@ -212,13 +163,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -231,15 +175,11 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
             const SizedBox(height: 16),
             Text(
               '즐겨찾기를 불러올 수 없습니다',
-              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
               error,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -274,7 +214,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         try {
           final marker = await _createFavoriteMarker(place, i);
           if (marker != null) {
-            // 🔥 수정: addOverlay 사용 (개별 추가)
             await _controller!.addOverlay(marker);
             _markers.add(marker);
           }
@@ -283,8 +222,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
           continue;
         }
         
-        // 각 마커 추가 후 짧은 딜레이 (안정성을 위해)
-        await Future.delayed(const Duration(milliseconds: 50));
       }
       
       debugPrint("즐겨찾기 마커 추가 완료: ${_markers.length}개");
@@ -344,11 +281,9 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         size: const Size(32, 32),
       );
 
-      // 마커 아이콘 설정 (안전하게)
       if (_favoriteMarkerIcon != null) {
         marker.setIcon(_favoriteMarkerIcon!);
       } else {
-        // 아이콘 생성 실패 시 기본 마커 사용
         final fallbackIcon = await _createCustomMarkerIcon(
           icon: Icons.favorite,
           backgroundColor: Colors.red,
@@ -358,10 +293,8 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         if (fallbackIcon != null) {
           marker.setIcon(fallbackIcon);
         }
-        // 아이콘 설정 실패해도 기본 마커로 표시됨
       }
 
-      // 마커 탭 리스너 설정
       marker.setOnTapListener((NMarker marker) {
         try {
           _showPlaceBottomSheet(place);
@@ -388,7 +321,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
       
-      // 원형 배경 그리기
       final backgroundPaint = Paint()
         ..color = backgroundColor
         ..style = PaintingStyle.fill;
@@ -471,7 +403,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 핸들
           Container(
             width: 40,
             height: 4,
@@ -507,7 +438,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
                     ),
                   ],
                 ),
-                
+                Divider(),
                 const SizedBox(height: 16),
                 
                 // 전화번호
@@ -516,7 +447,7 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
                     icon: Icons.phone,
                     text: place.pphone,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
                 
                 // 주소
@@ -528,13 +459,6 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
                   const SizedBox(height: 12),
                 ],
                 
-                // 좌표
-                _buildInfoRow(
-                  icon: Icons.my_location,
-                  text: '위도: ${place.latitude?.toStringAsFixed(6) ?? 'N/A'}\n경도: ${place.longitude?.toStringAsFixed(6) ?? 'N/A'}',
-                ),
-                
-                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -553,9 +477,9 @@ class _MapWidgetState extends ConsumerState<MapWidget> {
         Icon(
           icon,
           size: 18,
-          color: Colors.grey[600],
+          color: Colors.blue
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 20),
         Expanded(
           child: Text(
             text,

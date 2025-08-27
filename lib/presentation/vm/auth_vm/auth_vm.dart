@@ -61,8 +61,7 @@ class LoginVmClassProvider extends Notifier<LoginResult> {
   }
 }
 
-// 현재 사용자 정보를 관리하는 provider
-final currentUserProvider = FutureProvider.autoDispose<UserModel>((ref) async {
+final basicUserProvider = FutureProvider.autoDispose<UserModel>((ref) async {
   try {
     final user = await ref.read(authUseCaseProvider).getCurrentUser();
     return user;

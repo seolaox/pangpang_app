@@ -68,7 +68,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // 이미지 배열 준비 (순서 상관없음. 내가 보낸 배열 그 순서대로 서버가 저장)
     List<dynamic> images = ref.read(imageListProvider);
     int thumbnailIdx = ref.read(thumbnailIndexProvider);
 
@@ -79,7 +78,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
       return;
     }
 
-    // 이미지("images" 필드) MultipartFile 배열 준비
     List<MultipartFile> multipartFiles = [];
     for (var img in images) {
       if (img is File) {
@@ -88,7 +86,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
           await MultipartFile.fromFile(img.path, filename: fileName),
         );
       }
-      // 서버에 있는 기존 이미지는 String(URL)일 수 있으니 복원 필요시 따로 처리
     }
 
     print('썸네일 인덱스: $thumbnailIdx');
@@ -111,11 +108,11 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
     data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
 
     try {
-      final postVm = ref.read(postVmProvider.notifier);
+      final postCrud = ref.read(postCrudProvider.notifier);
       if (widget.post == null) {
-        await postVm.createPost(data);
+        await postCrud.createPost(data);
       } else {
-        await postVm.updatePost(widget.post!.pid, data);
+        await postCrud.updatePost(widget.post!.pid, data);
       }
       if (mounted) Navigator.pop(context, true);
       ref.invalidate(postListProvider);
@@ -167,7 +164,7 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
               ),
             ),
             SizedBox(height: 5),
-            // 메인 썸네일 표시 영역
+            // 메인 썸네일  -------------------------------------
             Container(
               width: double.infinity,
               height: 350,
@@ -259,7 +256,7 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
             ),
             SizedBox(height: 16),
 
-            // 이미지 선택 및 썸네일 설정 영역
+            // 이미지 선택 및 썸네일 -------------------------------------
             if (images.isNotEmpty) ...[
               Container(
                 padding: EdgeInsets.all(12),
@@ -347,7 +344,6 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                                                       ),
                                             ),
                                   ),
-                                  // 썸네일 표시 아이콘
                                   if (idx == thumbnailIdx)
                                     Positioned(
                                       bottom: 2,
@@ -367,7 +363,8 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
                                         ),
                                       ),
                                     ),
-                                  // 삭제 버튼
+
+                                  // 삭제 버튼-------------------------------------
                                   Positioned(
                                     right: -2,
                                     top: -2,
@@ -434,7 +431,7 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
               SizedBox(height: 20),
             ],
 
-            // 제목 및 내용 입력 폼
+            // 제목 및 내용 입력 폼 -------------------------------------
             Form(
               key: _formKey,
               child: Column(
@@ -471,7 +468,7 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
             ),
             SizedBox(height: 24),
 
-            // 저장 버튼
+            // 저장 버튼 -------------------------------------
             ElevatedButton(
               onPressed: _submit,
               child: Row(

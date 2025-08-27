@@ -89,7 +89,6 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
   Future<void> _toggleFavorite() async {
     if (_isLoading) return;
 
-    // 간단한 토큰 존재 여부만 확인 (TokenInterceptor가 자동 갱신 처리)
     final token = await TokenManager.getAccessToken();
     if (token == null || token.isEmpty) {
       if (mounted) {
@@ -113,7 +112,6 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
               label: '로그인',
               textColor: Colors.white,
               onPressed: () {
-                // TODO: 로그인 페이지로 이동
                 print('로그인 페이지로 이동');
               },
             ),

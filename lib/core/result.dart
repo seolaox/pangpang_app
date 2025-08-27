@@ -15,7 +15,7 @@ class Result<T> {
 
   bool get isFailure => !isSuccess;
 
-  // fold 메소드 구현
+
   R fold<R>(R Function(String error) onFailure, R Function(T data) onSuccess) {
     if (isSuccess) {
       return onSuccess(data as T);
