@@ -1,4 +1,3 @@
-// ui/widget/user/animal_list_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pangpang_app/data/model/user/animal_model.dart';

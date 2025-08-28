@@ -9,9 +9,11 @@ import 'package:pangpang_app/place/domain/usecase/search_hospital.dart';
 import 'package:pangpang_app/place/presentaion/place_vm.dart';
 import 'package:pangpang_app/util/token_manager.dart';
 
-
-//전체보기 모드 상태 Provider
+// 전체보기 모드 상태 Provider
 final showAllHospitalsProvider = StateProvider<bool>((ref) => false);
+
+// 선택된 병원 Provider (지도 이동용)
+final selectedHospitalProvider = StateProvider<AnimalHospitalEntity?>((ref) => null);
 
 final animalHospitalsProvider = StateNotifierProvider<AnimalHospitalsNotifier, AsyncValue<List<AnimalHospitalEntity>>>((ref) {
   return AnimalHospitalsNotifier(
@@ -209,4 +211,3 @@ class HospitalSearchNotifier extends StateNotifier<AsyncValue<List<AnimalHospita
     return null;
   }
 }
-

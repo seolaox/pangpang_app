@@ -14,6 +14,11 @@ void main() async {
   // Flutter 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
+    FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('Flutter 에러 발생: ${details.exception}');
+    debugPrint('스택트레이스: ${details.stack}');
+  };
+
   // dotenv 로드
   await dotenv.load(fileName: ".env");
 

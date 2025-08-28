@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/place/presentaion/place_provider.dart';
-import 'package:pangpang_app/place/widget/favorite_bottomsheet.dart';
+import 'package:pangpang_app/place/widget/favoritelist_bottomsheet.dart';
+import 'package:pangpang_app/place/widget/hospital_bottomsheet.dart';
 import 'package:pangpang_app/place/widget/map_widget.dart';
-import 'package:pangpang_app/place/widget/searchbar_bottomsheet.dart';
-import 'package:pangpang_app/ui/screen/searchbar.dart';
+import 'package:pangpang_app/place/widget/searchbar.dart';
 
 class ProfileView extends ConsumerStatefulWidget {
   const ProfileView({super.key});
@@ -16,15 +16,39 @@ class ProfileView extends ConsumerStatefulWidget {
 class _ProfileViewState extends ConsumerState<ProfileView> {
   bool _isSearchMode = false;
   String _currentSearchQuery = '';
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(animalHospitalsProvider.notifier).loadAnimalHospitals();
-      ref.read(hospitalSearchProvider.notifier).loadAllHospitals();
-    });
+    _initializeDataSequentially(); 
   }
+
+  Future<void> _initializeDataSequentially() async {
+    if (_isInitialized) return;
+    
+    try {
+      // 1. 먼저 지도가 준비될 때까지 대기
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      if (!mounted) return;
+      
+      // 2. 병원 데이터 먼저 로드
+      await ref.read(animalHospitalsProvider.notifier).loadAnimalHospitals();
+      
+      if (!mounted) return;
+      
+      // 3. 잠깐 대기 후 검색 데이터 로드
+      await Future.delayed(Duration(milliseconds: 200));
+      await ref.read(hospitalSearchProvider.notifier).loadAllHospitals();
+      
+      _isInitialized = true;
+      
+    } catch (e) {
+      debugPrint('초기화 중 오류: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +244,6 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
     }
   }
 
-
   void _showFavoriteList(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -340,36 +363,19 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
       _currentSearchQuery = '';
     });
 
-    // 상세 정보 바텀시트 표시
+    // 공통 바텀시트 사용
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => HospitalDetailSheet(
+      builder: (context) => CommonHospitalBottomSheet(
         hospital: hospital,
-        // placeId는 hospital이 즐겨찾기인 경우에만 전달
-        placeId: hospital.isFavorite ? _findPlaceIdForHospital(hospital) : null,
+        onMapMove: () => _moveToHospitalOnMap(hospital),
       ),
     );
   }
 
-  // 병원에 해당하는 place ID 찾기 (즐겨찾기 목록에서)
-  int? _findPlaceIdForHospital(dynamic hospital) {
-    final myPlacesState = ref.read(myPlacesProvider);
-    return myPlacesState.whenOrNull(
-      data: (places) {
-        for (final place in places) {
-          if (place.pname == hospital.name && 
-              place.paddress == hospital.address) {
-            return place.id;
-          }
-        }
-        return null;
-      },
-    );
-  }
-
-  void _moveToHospitalOnMap(dynamic hospital, dynamic selectedHospitalProvider) {
+  void _moveToHospitalOnMap(dynamic hospital) {
     print('지도에서 ${hospital.name} 위치로 이동: ${hospital.latitude}, ${hospital.longitude}');
     
     // 선택된 병원을 Provider에 저장 (MapWidget에서 사용할 수 있도록)

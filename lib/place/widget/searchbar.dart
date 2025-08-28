@@ -80,46 +80,9 @@ class _SearchAppBarState extends ConsumerState<SearchAppBar>
       title: AnimatedBuilder(
         animation: _animation,
         builder: (context, child) {
-          return _isSearchMode
-              ? FadeTransition(
-                  opacity: _animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, -0.5),
-                      end: Offset.zero,
-                    ).animate(_animation),
-                    child: _buildSearchField(),
-                  ),
-                )
-              : FadeTransition(
-                  opacity: Tween<double>(begin: 1.0, end: 0.0).animate(_animation),
-                  child: const Text('동물병원 찾기'),
-                );
+          return  _buildSearchField();
         },
       ),
-      actions: [
-        // 검색 버튼
-        IconButton(
-          onPressed: _toggleSearch,
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              _isSearchMode ? Icons.close : Icons.search,
-              key: ValueKey(_isSearchMode),
-            ),
-          ),
-          tooltip: _isSearchMode ? '검색 닫기' : '검색',
-        ),
-        
-        // 즐겨찾기 버튼 (검색 모드가 아닐 때만 표시)
-        if (!_isSearchMode) ...[
-          IconButton(
-            onPressed: widget.onShowFavorites,
-            icon: const Icon(Icons.favorite),
-            tooltip: '즐겨찾기',
-          ),
-        ],
-      ],
     );
   }
 

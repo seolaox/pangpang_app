@@ -1,4 +1,3 @@
-// ui/screen/user_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -120,7 +119,7 @@ class _UserViewState extends ConsumerState<UserView> {
 
   Widget _buildUserContent(UserModel user) {
     return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(), // RefreshIndicator용
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(16.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,8 +6,13 @@ import 'package:pangpang_app/util/token_manager.dart';
 
 class FavoriteButtonWidget extends ConsumerStatefulWidget {
   final AnimalHospitalEntity hospital;
+  final VoidCallback? onFavoriteChanged;
 
-  const FavoriteButtonWidget({super.key, required this.hospital});
+  const FavoriteButtonWidget({
+    super.key,
+    required this.hospital,
+    this.onFavoriteChanged,
+  });
 
   @override
   ConsumerState<FavoriteButtonWidget> createState() =>
@@ -60,25 +65,29 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
             child: IconButton(
               onPressed: _isLoading ? null : _toggleFavorite,
               iconSize: 24,
-              icon: _isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.hospital.isFavorite ? Colors.red : Colors.grey,
+              icon:
+                  _isLoading
+                      ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            widget.hospital.isFavorite
+                                ? Colors.red
+                                : Colors.grey,
+                          ),
                         ),
+                      )
+                      : Icon(
+                        widget.hospital.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color:
+                            widget.hospital.isFavorite
+                                ? Colors.red
+                                : Colors.grey[600],
                       ),
-                    )
-                  : Icon(
-                      widget.hospital.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: widget.hospital.isFavorite
-                          ? Colors.red
-                          : Colors.grey[600],
-                    ),
             ),
           ),
         );
@@ -131,13 +140,14 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
     });
 
     try {
-      // TokenInterceptor가 토큰 갱신을 자동으로 처리
       await ref
           .read(animalHospitalsProvider.notifier)
           .toggleFavorite(widget.hospital);
 
+      // 지도 마커 업데이트를 위해 myPlacesProvider도 새로고침
+      ref.read(myPlacesProvider.notifier).loadMyPlaces();
+
       if (mounted) {
-        // 성공 메시지 표시
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -165,6 +175,9 @@ class _FavoriteButtonWidgetState extends ConsumerState<FavoriteButtonWidget>
             ),
           ),
         );
+
+        // 즐겨찾기 상태 변경 콜백 호출 (바텀시트 닫기용)
+        widget.onFavoriteChanged?.call();
       }
     } catch (e) {
       if (mounted) {

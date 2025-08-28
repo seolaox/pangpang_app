@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/place/presentaion/place_vm.dart';
 import 'package:pangpang_app/place/domain/entity/place_entity.dart';
+import 'package:pangpang_app/place/domain/entity/hospital_entity.dart';
 import 'package:pangpang_app/place/presentaion/place_provider.dart';
+import 'package:pangpang_app/place/widget/hospital_bottomsheet.dart';
 
 class FavoriteListBottomSheet extends ConsumerStatefulWidget {
   const FavoriteListBottomSheet({super.key});
@@ -80,9 +82,9 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
             child: myPlacesState.when(
               data: (places) {
                 if (places.isEmpty) {
-                  return _buildEmptyState();
+                  return _EmptyState();
                 }
-                return _buildPlacesList(places);
+                return _PlacesList(places);
               },
               loading: () => const Center(
                 child: Column(
@@ -94,7 +96,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                   ],
                 ),
               ),
-              error: (error, _) => _buildErrorState(error.toString()),
+              error: (error, _) => _ErrorState(error.toString()),
             ),
           ),
         ],
@@ -102,7 +104,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _EmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -136,7 +138,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
     );
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _ErrorState(String error) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -178,19 +180,19 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
     );
   }
 
-  Widget _buildPlacesList(List<PlaceEntity> places) {
+  Widget _PlacesList(List<PlaceEntity> places) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: places.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final place = places[index];
-        return _buildPlaceCard(place);
+        return _PlaceCard(place);
       },
     );
   }
 
-  Widget _buildPlaceCard(PlaceEntity place) {
+  Widget _PlaceCard(PlaceEntity place) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -208,9 +210,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            Navigator.pop(context);
-          },
+          onTap: () => _showPlaceDetail(place),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -237,9 +237,21 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                       onSelected: (value) {
                         if (value == 'delete') {
                           _confirmDelete(place);
+                        } else if (value == 'map') {
+                          _moveToPlaceOnMap(place);
                         }
                       },
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'map',
+                          child: Row(
+                            children: [
+                              Icon(Icons.map, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('지도에서 보기'),
+                            ],
+                          ),
+                        ),
                         const PopupMenuItem(
                           value: 'delete',
                           child: Row(
@@ -254,9 +266,7 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 8),
-                
                 if (place.pphone.isNotEmpty) ...[
                   Row(
                     children: [
@@ -275,13 +285,10 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                           ),
                         ),
                       ),
-                      
                     ],
                   ),
                   const SizedBox(height: 8),
                 ],
-                
-                // 주소
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -301,16 +308,67 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
                         ),
                       ),
                     ),
-                    
                   ],
                 ),
-                const SizedBox(height: 12),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+
+  //공통 바텀시트 사용하기 위해 객체 변환 / 필드 맵핑
+  void _showPlaceDetail(PlaceEntity place) {
+    final hospital = AnimalHospitalEntity(
+      name: place.pname,
+      address: place.paddress,
+      phone: place.pphone,
+      latitude: place.latitude ?? 0.0,
+      longitude: place.longitude ?? 0.0,
+      isFavorite: true, // 즐겨찾기에서 온 것이므로 true
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CommonHospitalBottomSheet(
+        hospital: hospital,
+        onMapMove: () => _moveToPlaceOnMap(place),
+      ),
+    );
+  }
+
+  // 지도에서 해당 장소로 이동
+  void _moveToPlaceOnMap(PlaceEntity place) {
+    if (place.latitude == null || place.longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('위치 정보가 없어 지도에서 보여줄 수 없습니다'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final hospital = AnimalHospitalEntity(
+      name: place.pname,
+      address: place.paddress,
+      phone: place.pphone,
+      latitude: place.latitude!,
+      longitude: place.longitude!,
+      isFavorite: true,
+    );
+
+    // 지도 위젯 등에서 selectedHospitalProvider를 선택된 병원으로 인식
+    ref.read(selectedHospitalProvider.notifier).state = hospital;
+    
+    // 바텀시트 닫기
+    Navigator.pop(context);
+    
+    print('지도에서 ${place.pname} 위치로 이동: ${place.latitude}, ${place.longitude}');
   }
 
   void _confirmDelete(PlaceEntity place) {
@@ -381,6 +439,4 @@ class _FavoriteListBottomSheetState extends ConsumerState<FavoriteListBottomShee
       }
     }
   }
-
-
 }

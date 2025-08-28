@@ -44,6 +44,15 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+	<true/>   
+	<key>NMFNcpKeyId</key>
+    <string>vk1gmjpkuz</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>이 앱은 네이버지도를 위해 위치 정보가 필요합니다.</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>nmap</string>
+    </array>
+	
 </dict>
 </plist>

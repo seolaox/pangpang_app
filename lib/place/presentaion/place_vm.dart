@@ -20,22 +20,31 @@ final placeRepositoryProvider = Provider((ref) {
 });
 
 
+//동물병원 목록 조회
 final getAnimalHospitalsUseCaseProvider = Provider((ref) {
   return GetAnimalHospitalsUseCase(ref.watch(placeRepositoryProvider));
 });
 
+
+// 즐겨찾기 추가
 final addFavoritePlaceUseCaseProvider = Provider((ref) {
   return AddFavoritePlaceUseCase(ref.watch(placeRepositoryProvider));
 });
 
+
+//즐겨찾기 삭제
 final deleteFavoritePlaceUseCaseProvider = Provider((ref) {
   return DeleteFavoritePlaceUseCase(ref.watch(placeRepositoryProvider));
 });
 
+
+//내 장소 목록 조회
 final getMyPlacesUseCaseProvider = Provider((ref) {
   return GetMyPlacesUseCase(ref.watch(placeRepositoryProvider));
 });
 
+
+//병원 검색
 final searchHospitalsUseCaseProvider = Provider((ref) {
   return SearchHospitalsUseCase(ref.watch(placeRepositoryProvider));
 });
