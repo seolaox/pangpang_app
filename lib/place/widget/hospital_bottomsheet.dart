@@ -7,12 +7,14 @@ class CommonHospitalBottomSheet extends ConsumerWidget {
   final AnimalHospitalEntity hospital;
   final VoidCallback? onMapMove;
   final Widget? additionalContent;
+  final VoidCallback? onFavoriteChanged;
 
   const CommonHospitalBottomSheet({
     super.key,
     required this.hospital,
     this.onMapMove,
     this.additionalContent,
+    this.onFavoriteChanged,
   });
 
   @override
@@ -64,6 +66,7 @@ class CommonHospitalBottomSheet extends ConsumerWidget {
                 FavoriteButtonWidget(
                   hospital: hospital,
                   onFavoriteChanged: () {
+                    onFavoriteChanged?.call();
                     Navigator.of(context).pop();
                   },
                 ),

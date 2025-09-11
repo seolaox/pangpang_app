@@ -14,6 +14,14 @@ class PostRepoImpl implements PostRepoAbst {
     try {
       final posts = await _postApi.fetchPostsApi(page: page, size: size, formData: formData);
       return Result.success(posts);
+    } on DioException catch (e) {
+      String errorMessage = '게시글을 불러올 수 없습니다';
+      if (e.response != null) {
+        errorMessage += ': ${e.response!.statusCode} - ${e.response!.data}';
+      } else {
+        errorMessage += ': ${e.message}';
+      }
+      return Result.failure(errorMessage);
     } catch (e) {
       return Result.failure('게시글을 불러올 수 없습니다: $e');
     }
@@ -24,6 +32,14 @@ class PostRepoImpl implements PostRepoAbst {
     try {
       await _postApi.createPostApi(formData);
       return Result.success(null);
+    } on DioException catch (e) {
+      String errorMessage = '게시글 작성에 실패했습니다';
+      if (e.response != null) {
+        errorMessage += ': ${e.response!.statusCode} - ${e.response!.data}';
+      } else {
+        errorMessage += ': ${e.message}';
+      }
+      return Result.failure(errorMessage);
     } catch (e) {
       return Result.failure('게시글 작성에 실패했습니다: $e');
     }
@@ -34,6 +50,14 @@ class PostRepoImpl implements PostRepoAbst {
     try {
       await _postApi.updatePostApi(postId, formData);
       return Result.success(null);
+    } on DioException catch (e) {
+      String errorMessage = '게시글 수정에 실패했습니다';
+      if (e.response != null) {
+        errorMessage += ': ${e.response!.statusCode} - ${e.response!.data}';
+      } else {
+        errorMessage += ': ${e.message}';
+      }
+      return Result.failure(errorMessage);
     } catch (e) {
       return Result.failure('게시글 수정에 실패했습니다: $e');
     }
@@ -44,6 +68,14 @@ class PostRepoImpl implements PostRepoAbst {
     try {
       await _postApi.deletePostApi(postId);
       return Result.success(null);
+    } on DioException catch (e) {
+      String errorMessage = '게시글 삭제에 실패했습니다';
+      if (e.response != null) {
+        errorMessage += ': ${e.response!.statusCode} - ${e.response!.data}';
+      } else {
+        errorMessage += ': ${e.message}';
+      }
+      return Result.failure(errorMessage);
     } catch (e) {
       return Result.failure('게시글 삭제에 실패했습니다: $e');
     }

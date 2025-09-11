@@ -23,12 +23,13 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   final baseUrl = dotenv.env['baseurl']!;
+  final clientID = dotenv.env['clientID']!;
 
   DioClient().init(baseUrl: baseUrl);
 
 
     await FlutterNaverMap().init(
-          clientId: 'pidwn5ggyx',
+          clientId: clientID,
           onAuthFailed: (ex) {
             switch (ex) {
               case NQuotaExceededException(:final message):

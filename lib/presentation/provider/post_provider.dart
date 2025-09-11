@@ -74,3 +74,4 @@ class PostCrudNotifier extends StateNotifier<AsyncValue<void>> {
     );
   }
 }
+

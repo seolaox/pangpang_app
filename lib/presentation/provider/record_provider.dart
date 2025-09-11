@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
@@ -22,7 +23,7 @@ class VideoState {
     this.duration = Duration.zero,
     this.isLoading = false,
     this.errorMessage,
-    this.showControl = true,
+    this.showControl = true, // 기본값을 true로 변경
   });
 
   VideoState copyWith({
@@ -55,6 +56,8 @@ final videoProvider = StateNotifierProvider<VideoNotifier, VideoState>((ref) {
 
 // 비디오 상태 관리 Notifier
 class VideoNotifier extends StateNotifier<VideoState> {
+  Timer? _hideControlsTimer; // 자동 숨김 타이머 추가
+
   VideoNotifier() : super(const VideoState());
 
   // 비디오 선택
@@ -101,7 +104,12 @@ class VideoNotifier extends StateNotifier<VideoState> {
         position: controller.value.position,
         isPlaying: controller.value.isPlaying,
         isLoading: false,
+        showControl: true, // 비디오 로드 후 컨트롤 표시
       );
+
+      // 3초 후 자동으로 컨트롤 숨김
+      _startHideControlsTimer();
+      
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -130,6 +138,9 @@ class VideoNotifier extends StateNotifier<VideoState> {
       } else {
         state.controller!.play();
       }
+      
+      // 버튼 누를 때마다 컨트롤 표시하고 3초 후 숨김
+      _showControlsTemporarily();
     }
   }
 
@@ -141,6 +152,7 @@ class VideoNotifier extends StateNotifier<VideoState> {
           ? Duration.zero 
           : newPosition;
       state.controller!.seekTo(targetPosition);
+      _showControlsTemporarily();
     }
   }
 
@@ -152,6 +164,7 @@ class VideoNotifier extends StateNotifier<VideoState> {
           ? state.duration 
           : newPosition;
       state.controller!.seekTo(targetPosition);
+      _showControlsTemporarily();
     }
   }
 
@@ -163,13 +176,18 @@ class VideoNotifier extends StateNotifier<VideoState> {
     }
   }
 
-   // 컨트롤 표시/숨김 토글
+  // 컨트롤 표시/숨김 토글
   void toggleControls() {
-    state = state.copyWith(showControl: !state.showControl);
+    if (state.showControl) {
+      hideControls();
+    } else {
+      _showControlsTemporarily();
+    }
   }
 
   // 컨트롤 숨김
   void hideControls() {
+    _hideControlsTimer?.cancel();
     state = state.copyWith(showControl: false);
   }
 
@@ -178,10 +196,26 @@ class VideoNotifier extends StateNotifier<VideoState> {
     state = state.copyWith(showControl: true);
   }
 
-  
+  // 컨트롤을 일시적으로 표시하고 3초 후 자동 숨김
+  void _showControlsTemporarily() {
+    state = state.copyWith(showControl: true);
+    _startHideControlsTimer();
+  }
+
+  // 3초 후 컨트롤 숨김 타이머 시작
+  void _startHideControlsTimer() {
+    _hideControlsTimer?.cancel();
+    _hideControlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        hideControls();
+      }
+    });
+  }
+
   // 리소스 정리
   @override
   void dispose() {
+    _hideControlsTimer?.cancel();
     if (state.controller != null) {
       state.controller!.removeListener(_videoListener);
       state.controller!.dispose();
@@ -189,4 +223,3 @@ class VideoNotifier extends StateNotifier<VideoState> {
     super.dispose();
   }
 }
-

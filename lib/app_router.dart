@@ -2,8 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/data/model/user/user_model.dart';
 import 'package:pangpang_app/ui/components/app_tabbar.dart';
 import 'package:pangpang_app/ui/screen/food_view.dart';
-import 'package:pangpang_app/ui/screen/home_detail_view.dart';
-import 'package:pangpang_app/ui/screen/home_view.dart';
+import 'package:pangpang_app/ui/screen/post_detail_view.dart';
+import 'package:pangpang_app/ui/screen/post_view.dart';
 import 'package:pangpang_app/ui/screen/login_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
 import 'package:pangpang_app/ui/screen/splash_view.dart';
@@ -23,26 +23,24 @@ class AppRouter {
         path: '/first_view',
         builder: (context, state) => const AppTabbar(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) =>  HomeView(),
-      ),
-      GoRoute(
-        path: '/food',
-        builder: (context, state) => const FoodView(),
-      ),
+      GoRoute(path: '/home', builder: (context, state) => PostView()),
+      GoRoute(path: '/food', builder: (context, state) => const FoodView()),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileView(),
       ),
       GoRoute(
-        path: '/home_detail',
-        builder: (context, state) =>  HomeDetailView(),
+        path: '/post_detail',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PostDetailView(
+            post: extra?['post'],
+            initialImages: extra?['initialImages'],
+            initialThumbnail: extra?['initialThumbnail'],
+          );
+        },
       ),
-      GoRoute(
-        path: '/user',
-        builder: (context, state) => UserView(),
-      ),
-    ]
+      GoRoute(path: '/user', builder: (context, state) => UserView()),
+    ],
   );
 }

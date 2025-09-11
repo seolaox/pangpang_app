@@ -9,17 +9,17 @@ import 'package:pangpang_app/data/model/post_model.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
 import 'package:pangpang_app/presentation/vm/post_vm.dart';
 
-class HomeDetailView extends ConsumerStatefulWidget {
+class PostDetailView extends ConsumerStatefulWidget {
   final PostModel? post;
   final List<String>? initialImages;
   final String? initialThumbnail;
-  HomeDetailView({this.post, this.initialImages, this.initialThumbnail});
+  PostDetailView({this.post, this.initialImages, this.initialThumbnail});
 
   @override
-  ConsumerState<HomeDetailView> createState() => _HomeCreateViewState();
+  ConsumerState<PostDetailView> createState() => _HomeCreateViewState();
 }
 
-class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
+class _HomeCreateViewState extends ConsumerState<PostDetailView> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleCtrl;
   late TextEditingController _bodyCtrl;
@@ -65,64 +65,83 @@ class _HomeCreateViewState extends ConsumerState<HomeDetailView> {
     ref.read(thumbnailIndexProvider.notifier).state = 0;
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _submit() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    List<dynamic> images = ref.read(imageListProvider);
-    int thumbnailIdx = ref.read(thumbnailIndexProvider);
+  List<dynamic> images = ref.read(imageListProvider);
+  int thumbnailIdx = ref.read(thumbnailIndexProvider);
 
-    if (images.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('최소 1개의 이미지를 선택해주세요')));
-      return;
+  if (images.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('최소 1개의 이미지를 선택해주세요'))
+    );
+    return;
+  }
+
+  try {
+    final data = FormData();
+    
+    // 기본 필드들
+    data.fields.add(MapEntry("pname", _titleCtrl.text));
+    data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
+    data.fields.add(MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})));
+    data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
+    
+    // 선택적 필드들 (있는 경우에만 추가)
+    if (widget.post?.paid != null) {
+      data.fields.add(MapEntry("paid", widget.post!.paid!));
+    }
+    if (widget.post?.pfid != null) {
+      data.fields.add(MapEntry("pfid", widget.post!.pfid!));
     }
 
-    List<MultipartFile> multipartFiles = [];
+    // 이미지 파일들 추가
+    List<MultipartFile> imageFiles = [];
     for (var img in images) {
       if (img is File) {
         final fileName = img.path.split(Platform.pathSeparator).last;
-        multipartFiles.add(
-          await MultipartFile.fromFile(img.path, filename: fileName),
+        final multipartFile = await MultipartFile.fromFile(
+          img.path, 
+          filename: fileName
         );
+        imageFiles.add(multipartFile);
       }
     }
 
-    print('썸네일 인덱스: $thumbnailIdx');
-    print('총 이미지 수: ${images.length}');
-    print('multipartFiles 수: ${multipartFiles.length}');
-
-    final data = FormData();
-    data.fields.add(MapEntry("pname", _titleCtrl.text));
-    data.fields.add(MapEntry("pdate", DateTime.now().toIso8601String()));
-    data.fields.add(
-      MapEntry("pcontents", jsonEncode({"text": _bodyCtrl.text})),
-    );
-    data.fields.add(MapEntry("pauthor", widget.post?.pauthor ?? "me"));
-
-    // 이미지 추가
-    for (final file in multipartFiles) {
+    // images 배열로 추가
+    for (final file in imageFiles) {
       data.files.add(MapEntry("images", file));
     }
 
+    // 썸네일 인덱스 추가
     data.fields.add(MapEntry("thumbnail_index", thumbnailIdx.toString()));
 
-    try {
-      final postCrud = ref.read(postCrudProvider.notifier);
-      if (widget.post == null) {
-        await postCrud.createPost(data);
-      } else {
-        await postCrud.updatePost(widget.post!.pid, data);
-      }
-      if (mounted) Navigator.pop(context, true);
+    print('전송할 데이터:');
+    print('- pname: ${_titleCtrl.text}');
+    print('- pcontents: ${jsonEncode({"text": _bodyCtrl.text})}');
+    print('- thumbnail_index: $thumbnailIdx');
+    print('- images 개수: ${imageFiles.length}');
+
+    final postCrud = ref.read(postCrudProvider.notifier);
+    if (widget.post == null) {
+      await postCrud.createPost(data);
+    } else {
+      await postCrud.updatePost(widget.post!.pid, data);
+    }
+    
+    if (mounted) {
+      Navigator.pop(context, true);
       ref.invalidate(postListProvider);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-      print(e);
+    }
+  } catch (e) {
+    print('전송 오류: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('저장 실패: $e'))
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

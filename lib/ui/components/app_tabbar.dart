@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pangpang_app/presentation/provider/tabbar_provider.dart';
 import 'package:pangpang_app/ui/components/app_appbar.dart';
 import 'package:pangpang_app/ui/screen/food_view.dart';
-import 'package:pangpang_app/ui/screen/home_view.dart';
+import 'package:pangpang_app/ui/screen/post_view.dart';
 import 'package:pangpang_app/ui/screen/profile_view.dart';
 import 'package:pangpang_app/ui/screen/record_view.dart';
 import 'package:pangpang_app/util/style/image_to_icon.dart';
@@ -74,7 +74,7 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
 
         //스와이프에 의한 탭 이동이 비활성화
         physics: const NeverScrollableScrollPhysics(),
-        children: [ HomeView(), const FoodView(), const RecordView(), const ProfileView()],
+        children: [ PostView(), const FoodView(), const RecordView(), const ProfileView()],
       ),
       bottomNavigationBar: _buildTab(context),
     );
@@ -89,7 +89,7 @@ class _AppTabbarState extends ConsumerState<AppTabbar>
         labelColor: AppTabBarTheme.selectedColor,
         onTap: (index) {
           ref.read(tabProvider.notifier).changeTab(index);
-        },
+        }, 
         tabs: [
           Tab(icon: Icon(Icons.home, size: AppTabBarTheme.iconSize), text: '홈'),
           Tab(

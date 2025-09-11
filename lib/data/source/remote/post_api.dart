@@ -13,6 +13,7 @@ class PostApi {
   Future<List<PostModel>> fetchPostsApi({int page = 1, int size = 10, FormData? formData}) async {
     final token = await TokenManager.getAccessToken();
     final url = '$baseUrl${ApiEndpoint.postList}?page=$page&size=$size';
+    
     final response = await _dio.get(
       url,
       data: formData,
@@ -25,11 +26,20 @@ class PostApi {
 
     if (response.statusCode == 200) {
       final data = response.data;
-  
-      final postsJson = data['posts'] as List<dynamic>;
-      return postsJson.map((json) => PostModel.fromJson(json)).toList();
+      
+      // 서버 응답이 배열인지 객체인지 확인
+      if (data is List) {
+        // 직접 배열로 응답하는 경우
+        return data.map((json) => PostModel.fromJson(json)).toList();
+      } else if (data is Map<String, dynamic>) {
+        // posts 키가 있는 객체로 응답하는 경우
+        final postsJson = data['posts'] as List<dynamic>? ?? data['data'] as List<dynamic>? ?? [];
+        return postsJson.map((json) => PostModel.fromJson(json)).toList();
+      } else {
+        throw Exception('예상하지 못한 응답 형식');
+      }
     } else {
-      throw Exception('게시글 못불러옴');
+      throw Exception('게시글을 불러올 수 없습니다: ${response.statusCode}');
     }
   }
 
@@ -46,8 +56,9 @@ class PostApi {
         validateStatus: (status) => status != null && status >= 200 && status < 300,
       ),
     );
+    
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('게시글 생성 실패: ${response.statusCode}');
+      throw Exception('게시글 생성 실패: ${response.statusCode} - ${response.data}');
     }
   }
 
@@ -66,7 +77,7 @@ class PostApi {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('게시글 수정 실패: ${response.statusCode}');
+      throw Exception('게시글 수정 실패: ${response.statusCode} - ${response.data}');
     }
   }
 
@@ -78,7 +89,7 @@ class PostApi {
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     if (response.statusCode != 200) {
-      throw Exception('글 삭제 실패');
+      throw Exception('글 삭제 실패: ${response.statusCode} - ${response.data}');
     }
   }
 }

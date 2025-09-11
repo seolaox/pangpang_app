@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pangpang_app/presentation/provider/post_provider.dart';
 import 'package:pangpang_app/presentation/vm/post_vm.dart';
-import 'package:pangpang_app/ui/screen/home_detail_view.dart';
+import 'package:pangpang_app/ui/screen/post_detail_view.dart';
 import 'package:pangpang_app/util/get_images.dart';
+import 'package:skeletons/skeletons.dart';
 
-class HomeView extends ConsumerWidget {
+class PostView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    String? baseUrl = dotenv.env['baseurl'];
-    if (baseUrl != null && !baseUrl.endsWith('/')) {
-      baseUrl = '$baseUrl/';
-    }
-
     final postListAsync = ref.watch(postListProvider);
 
     return Scaffold(
@@ -24,12 +19,12 @@ class HomeView extends ConsumerWidget {
         onPressed: () async {
           ref.read(thumbnailIndexProvider.notifier).state = 0;
           ref.read(imageListProvider.notifier).clear();
-          GoRouter.of(context).push('/home_detail');
+          GoRouter.of(context).push('/post_detail');
           ref.invalidate(postListProvider);
         },
       ),
       body: postListAsync.when(
-        loading: () => Center(child: CircularProgressIndicator()),
+        loading: () => _buildSkeletonLoading(context),
         error: (err, stack) => Center(child: Text('에러 발생: $err')),
         data: (posts) {
           if (posts.isEmpty) return Center(child: Text('게시글이 없습니다.'));
@@ -57,7 +52,6 @@ class HomeView extends ConsumerWidget {
                       )
                       .toList();
 
-              // 썸네일을 제외한 나머지 이미지들만 필터링
               final otherImageUrls =
                   allImageUrls
                       .where((imgUrl) => imgUrl != thumbnailUrl)
@@ -70,22 +64,19 @@ class HomeView extends ConsumerWidget {
               } else {
                 dateStr = post.pdate.toString();
               }
-
               return GestureDetector(
                 onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => HomeDetailView(
-                            post: post,
-                            initialImages: allImageUrls, // 수정 시에는 모든 이미지 전달
-                            initialThumbnail: thumbnailUrl,
-                          ),
-                    ),
+                  await context.push(
+                    '/post_detail',
+                    extra: {
+                      'post': post,
+                      'initialImages': allImageUrls,
+                      'initialThumbnail': thumbnailUrl,
+                    },
                   );
                   ref.invalidate(postListProvider);
                 },
+
                 onDoubleTap: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
@@ -134,7 +125,6 @@ class HomeView extends ConsumerWidget {
                             ),
                           ),
                         ),
-
                       if (otherImageUrls.isNotEmpty) ...[
                         SizedBox(height: 4),
                         SizedBox(
@@ -169,10 +159,7 @@ class HomeView extends ConsumerWidget {
                           ),
                         ),
                       ],
-
-                     
                       Divider(),
-
                       Padding(
                         padding: const EdgeInsets.only(left: 6),
                         child: Text(
@@ -229,6 +216,115 @@ class HomeView extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSkeletonLoading(BuildContext context) {
+    final List<double> skeletonHeights = [
+      200,
+      280,
+      220,
+      300,
+      180,
+      250,
+      190,
+      320,
+      240,
+      210,
+    ];
+
+    return MasonryGridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      padding: EdgeInsets.all(12),
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        final height = skeletonHeights[index % skeletonHeights.length];
+
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            height: height,
+            padding: EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 썸네일 이미지
+                Expanded(
+                  flex: 3,
+                  child: SkeletonAvatar(
+                    style: SkeletonAvatarStyle(
+                      width: double.infinity,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: List.generate(
+                    3,
+                    (i) => Padding(
+                      padding: EdgeInsets.only(right: 4),
+                      child: SkeletonAvatar(
+                        style: SkeletonAvatarStyle(
+                          width: 30,
+                          height: 30,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                // 제목
+                SkeletonLine(
+                  style: SkeletonLineStyle(
+                    height: 16,
+                    width: double.infinity,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                SizedBox(height: 4),
+                // 내용
+                SkeletonParagraph(
+                  style: SkeletonParagraphStyle(
+                    lines: 2 + (index % 2),
+                    spacing: 4,
+                    lineStyle: SkeletonLineStyle(
+                      height: 12,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Spacer(),
+                // 하단 작성자/날짜
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SkeletonLine(
+                      style: SkeletonLineStyle(
+                        height: 12,
+                        width: 80,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    SkeletonLine(
+                      style: SkeletonLineStyle(
+                        height: 12,
+                        width: 50,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
